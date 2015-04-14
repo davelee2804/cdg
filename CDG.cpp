@@ -89,6 +89,161 @@ void CDG::Advect( double dt ) {
 }
 
 void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
+	int 		cell_i, cell_x, cell_y, edge_i, basis_i, tri_i, quad_i, norm;
+	Grid*		grid	= phi->grid;
+	int			nx 		= grid->nx;
+	int			ny 		= grid->ny;
+	double 		**pts;
+	Polygon 	*prePoly, *intPoly;
+	Cell		*incPoly;
+	Triangle*	tri;
+	int			pinds[6], left, right, into;
+	double 		weight, qf[2], tracer, basis, sign;
+	int			order	= grid->basisOrder;
+	int			nBasis	= order*order;
+	double**	flux;
+	double**	preCoords;
+
+	pts = new double*[4];
+	pts[0] = new double[2];
+	pts[1] = new double[2];
+	pts[2] = new double[2];
+	pts[3] = new double[2];
+
+	flux = new double*[grid->nCells];
+	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
+		flux[cell_i] = new double[nBasis];
+		for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
+			flux[cell_i][basis_i] = 0.0;
+		}
+	}
+
+	preCoords = new double*[nBasis];
+	for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
+		preCoords[basis_i] = new double[2];
+	}
+
+	for( edge_i = 0; edge_i < grid->nEdges; edge_i++ ) {
+        grid->EdgeIndexToCoord( edge_i, &norm, &cell_x, &cell_y );
+
+        /* ignore boundaries and edges incident on boundaries for now */
+        if( !grid->GetEdgeCellInds( edge_i, pinds ) ) {
+            continue;
+        }
+
+        if( norm == 0 ) {
+            left = pinds[2];
+            right = pinds[3];
+
+            /* verts must be clockwise */
+            pts[0][0] = grid->edges[edge_i]->v2[0];
+            pts[0][1] = grid->edges[edge_i]->v2[1];
+            pts[1][0] = grid->edges[edge_i]->v1[0];
+            pts[1][1] = grid->edges[edge_i]->v1[1];
+            pts[2][0] = preGrid->edges[edge_i]->v1[0];
+            pts[2][1] = preGrid->edges[edge_i]->v1[1];
+            pts[3][0] = preGrid->edges[edge_i]->v2[0];
+            pts[3][1] = preGrid->edges[edge_i]->v2[1];
+        }
+        else {
+            left = pinds[4];
+            right = pinds[1];
+
+            /* verts must be clockwise */
+            pts[0][0] = grid->edges[edge_i]->v1[0];
+            pts[0][1] = grid->edges[edge_i]->v1[1];
+            pts[1][0] = grid->edges[edge_i]->v2[0];
+            pts[1][1] = grid->edges[edge_i]->v2[1];
+            pts[2][0] = preGrid->edges[edge_i]->v2[0];
+            pts[2][1] = preGrid->edges[edge_i]->v2[1];
+            pts[3][0] = preGrid->edges[edge_i]->v1[0];
+            pts[3][1] = preGrid->edges[edge_i]->v1[1];
+        }
+
+        prePoly = new Polygon( pts, 4, preGrid->quadOrder );
+
+        /* if the cross product of the edge and the vector made by the lower point of the original edge and the 
+		   upper point of the final edge is > 0, then the flux is rightwards across the edge */
+        into = ( GetNorm( grid->edges[edge_i]->v1, grid->edges[edge_i]->v2, preGrid->edges[edge_i]->v2 ) > 0.0 ) ? right : left;
+        for( cell_i = 0; cell_i < 6; cell_i++ ) {
+			sign = ( pinds[cell_i] == into ) ? +1.0 : -1.0;
+			incPoly = grid->cells[pinds[cell_i]];
+			intPoly = prePoly->Intersection( incPoly );
+			if( intPoly ) {
+				for( tri_i = 0; tri_i < intPoly->n; tri_i++ ) {
+					tri = intPoly->tris[tri_i];
+					for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
+						//TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
+						for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
+							TraceRK2( dt, ADV_BACKWARD, grid->cells[pinds[cell_i]]->coords[basis_i], preCoords[basis_i] );
+						}
+
+						weight = tri->wi[quad_i]*tri->Area()/incPoly->Area();
+
+						//tracer = phi->basis[pinds[cell_i]]->EvalFull( tri->qi[quad_i], grid->cells[pinds[cell_i]]->coords ); //where to evaluate??
+						//tracer = phi->basis[into]->EvalFull( qf, grid->cells[into]->coords ); //where to evaluate??
+						//tracer = phi->basis[into]->EvalFull( tri->qi[quad_i], preCoords ); //where to evaluate??
+						tracer = phi->basis[pinds[cell_i]]->EvalFull( tri->qi[quad_i], preCoords ); //where to evaluate??
+
+						for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
+							//basis = phi->basis[into]->EvalIJ( qf, basis_i, grid->cells[into]->coords[basis_i] );
+							basis = phi->basis[into]->EvalIJ( tri->qi[quad_i], basis_i, preCoords[basis_i] );
+
+							flux[pinds[cell_i]][basis_i] += sign*weight*tracer*basis;
+						}
+					}
+				}
+				delete intPoly;
+			}
+        }
+        delete prePoly;
+	}
+		
+	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
+		cell_x = cell_i%nx;
+		cell_y = cell_i/nx;
+
+		/* ignore boundaries for now */
+		if( cell_x == 0 || cell_x == nx - 1 || cell_y == 0 || cell_y == ny - 1 ) {
+			continue;
+		}
+
+		/* add rhs contributions from previous cell */
+		for( tri_i = 0; tri_i < grid->cells[cell_i]->n; tri_i++ ) {
+			tri = grid->cells[cell_i]->tris[tri_i];
+			for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
+				weight = tri->wi[quad_i]*tri->Area()/grid->cells[cell_i]->Area();
+				tracer = phi->basis[cell_i]->EvalFull( tri->qi[quad_i], grid->cells[cell_i]->coords );
+				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
+					basis = phi->basis[cell_i]->EvalIJ( tri->qi[quad_i], basis_i, grid->cells[cell_i]->coords[basis_i] );
+					flux[cell_i][basis_i] += weight*tracer*basis;
+				}
+			}
+		}
+
+		/* update the cell coefficients */
+		AXEB( betaInv_ij[cell_i], flux[cell_i], phiTemp->basis[cell_i]->ci, nBasis );
+	}
+
+	delete[] pts[0];
+	delete[] pts[1];
+	delete[] pts[2];
+	delete[] pts[3];
+	delete[] pts;
+
+	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
+		delete[] flux[cell_i];
+	}
+	delete[] flux;
+
+	for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
+		delete[] preCoords[basis_i];
+	}
+	delete[] preCoords;
+}
+
+#if 0
+void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	int 		cell_i, cell_x, cell_y, edge_i, pi, tri_i, quad_i, fj, v1, v2;
 	Grid*		grid	= phi->grid;
 	int			nx 		= grid->nx;
@@ -233,3 +388,4 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	delete[] pts[3];
 	delete[] pts;
 }
+#endif

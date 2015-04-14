@@ -55,7 +55,7 @@ int main() {
 	CDG*		cdg		= new CDG( phi, velx, vely );
 	int			i, j;
 	int			nsteps	= 64*4;
-	int			dump	= 8;
+	int			dump	= 1;
 	double		dt		= M_PI/nsteps;
 	Field*		ans		= new Field( pgrid );
 	double		err		= 0.0;

@@ -145,8 +145,7 @@ int main() {
 			AXEB( beta_ij_2, basis->ci, cj2, cell->nc );
 
 			for( k = 0; k < cell->nc; k++ ) {
-				/* basis functions are evaluated at the quadrature points,
-				   however fields are represented at the cell points... */
+				/* basis functions are evaluated at the quadrature points, however fields are represented at the cell points... */
 				weight = grid->dx*grid->dy/basis->order/basis->order;
 				vol += weight*cj2[k];
 			}

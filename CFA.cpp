@@ -112,7 +112,7 @@ void CFA::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	for( ei = 0; ei < grid->nEdges; ei++ ) {
 		grid->EdgeIndexToCoord( ei, &norm, &xi, &yj );
 
-		/* ignore boundaries and  edges incident on boundaries for now */
+		/* ignore boundaries and edges incident on boundaries for now */
 		if( !grid->GetEdgeCellInds( ei, pinds ) ) {
 			continue;
 		}
