@@ -20,7 +20,7 @@ Field::Field( Grid* _grid ) {
 
 	basis = new Basis*[grid->nCells];
 	for( i = 0; i < grid->nCells; i++ ) {
-		basis[i] = new Basis( grid->basisOrder, grid->cells[i]->origin, 16.0/grid->dx/grid->dy );
+		basis[i] = new Basis( grid->basisOrder, grid->cells[i]->origin );
 	}
 }
 
@@ -58,6 +58,36 @@ void Field::LinearInterp( double* x, double* v ) {
 			v[0] += basis[yj*grid->nx+xi]->ci[j*2+i]*xb[i]*yb[j];
 		}
 	}
+}
+
+/* integrate assuming constant values for each cell */
+double Field::IntegrateConstant() {
+	int i;
+	double vol = 0;
+
+	for( i = 0; i < grid->nCells; i++ ) {
+		vol += basis[i]->ci[0]*grid->dx*grid->dy;
+	}
+	return vol;
+}
+
+double Field::Integrate() {
+	int i, j, k;
+	double val, vol = 0;
+	Cell* cell;
+	Triangle* tri;
+
+	for( i = 0; i < grid->nCells; i++ ) {
+		cell = grid->cells[i];
+		for( j = 0; j < cell->n; j++ ) {
+			tri = cell->tris[j];
+			for( k = 0; k < tri->nQuadPts; k++ ) {
+				val = basis[i]->EvalFull( tri->qi[k] );
+				vol += val*tri->wi[k]*tri->Area();
+			}
+		}
+	}
+	return vol;
 }
 
 void Field::Copy( Field* field ) {

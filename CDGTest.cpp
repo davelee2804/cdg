@@ -83,8 +83,9 @@ int main() {
 	phi->Write( "phi", 0 );
 
 	for( i = 1; i <= nsteps; i++ ) {
-		cout << "time step: " << i << endl;
+		cout << "time step: " << i;
 		cdg->Advect( dt );
+		cout << "...done, volume: " << phi->Integrate() << endl;
 		if( i%dump == 0 ) {
 			phi->Write( "phi", i );
 		}
@@ -96,7 +97,7 @@ int main() {
 		}
 
 		for( j = 0; j < BASIS_ORDER*BASIS_ORDER; j++ ) {
-			val = phi->basis[i]->EvalFull( pgrid->cells[i]->coords[j], pgrid->cells[i]->coords );
+			val = phi->basis[i]->EvalFull( pgrid->cells[i]->coords[j] );
 			err += fabs(val - ans->basis[i]->ci[j]);
 			norm += ans->basis[i]->ci[j];
 		}

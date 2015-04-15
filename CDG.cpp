@@ -8,8 +8,8 @@
 #include "CFA.h"
 #include "CDG.h"
 
-#define ADV_FORWARD +1
-#define ADV_BACKWARD -1
+#define ADV_FORWARD (+1)
+#define ADV_BACKWARD (-1)
 
 CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) {
 	int 		i, j, k, l, pi;
@@ -41,8 +41,7 @@ CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) 
 					for( i = 0; i < nBasis; i++ ) {
 						weight = tri->wi[l]*tri->Area()/cell->Area();
 						coord = tri->qi[l];
-						//beta_ij[j*nBasis+i] += weight*basis->EvalIJ( cell->coords[i], i, cell->coords[i] )*basis->EvalIJ( cell->coords[j], j, cell->coords[j] );
-						beta_ij[j*nBasis+i] += weight*basis->EvalIJ( cell->coords[i], i, coord )*basis->EvalIJ( cell->coords[j], j, coord );
+						beta_ij[j*nBasis+i] += weight*basis->EvalIJ( coord, i )*basis->EvalIJ( coord, j );
 					}
 				}
 			}
@@ -54,8 +53,9 @@ CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) 
 				tri = cell->tris[k];
 				for( l = 0; l < tri->nQuadPts; l++ ) {
 					weight = tri->wi[l]*tri->Area()/cell->Area();
+					coord = tri->qi[l];
 					/* basis initially set as the spatial values at the cell coordinates */
-					fj[j] += weight*basis->EvalIJ( cell->coords[j], j, cell->coords[j] )*basis->ci[j];
+					fj[j] += weight*basis->EvalIJ( coord, j )*basis->ci[j];
 				}
 			}
 		}
@@ -167,6 +167,10 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
         into = ( GetNorm( grid->edges[edge_i]->v1, grid->edges[edge_i]->v2, preGrid->edges[edge_i]->v2 ) > 0.0 ) ? right : left;
         for( cell_i = 0; cell_i < 6; cell_i++ ) {
 			sign = ( pinds[cell_i] == into ) ? +1.0 : -1.0;
+			//if( into == pinds[cell_i] ) {
+			//	continue;
+			//}
+
 			incPoly = grid->cells[pinds[cell_i]];
 			intPoly = prePoly->Intersection( incPoly );
 			if( intPoly ) {
@@ -180,16 +184,18 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 
 						weight = tri->wi[quad_i]*tri->Area()/incPoly->Area();
 
-						//tracer = phi->basis[pinds[cell_i]]->EvalFull( tri->qi[quad_i], grid->cells[pinds[cell_i]]->coords ); //where to evaluate??
-						//tracer = phi->basis[into]->EvalFull( qf, grid->cells[into]->coords ); //where to evaluate??
-						//tracer = phi->basis[into]->EvalFull( tri->qi[quad_i], preCoords ); //where to evaluate??
-						tracer = phi->basis[pinds[cell_i]]->EvalFull( tri->qi[quad_i], preCoords ); //where to evaluate??
+						//tracer = phi->basis[pinds[cell_i]]->EvalFull( tri->qi[quad_i], grid->cells[pinds[cell_i]]->coords );
+						//tracer = phi->basis[into]->EvalFull( qf, grid->cells[into]->coords );
+						//tracer = phi->basis[into]->EvalFull( tri->qi[quad_i], preCoords );
+						tracer = phi->basis[pinds[cell_i]]->EvalFull( tri->qi[quad_i] );
 
 						for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
 							//basis = phi->basis[into]->EvalIJ( qf, basis_i, grid->cells[into]->coords[basis_i] );
-							basis = phi->basis[into]->EvalIJ( tri->qi[quad_i], basis_i, preCoords[basis_i] );
+							basis = phi->basis[into]->EvalIJ( tri->qi[quad_i], basis_i );
 
 							flux[pinds[cell_i]][basis_i] += sign*weight*tracer*basis;
+							//flux[into][basis_i] += weight*tracer*basis;
+							//flux[pinds[cell_i]][basis_i] -= weight*tracer*basis;
 						}
 					}
 				}
@@ -213,9 +219,9 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 			tri = grid->cells[cell_i]->tris[tri_i];
 			for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
 				weight = tri->wi[quad_i]*tri->Area()/grid->cells[cell_i]->Area();
-				tracer = phi->basis[cell_i]->EvalFull( tri->qi[quad_i], grid->cells[cell_i]->coords );
+				tracer = phi->basis[cell_i]->EvalFull( tri->qi[quad_i] );
 				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
-					basis = phi->basis[cell_i]->EvalIJ( tri->qi[quad_i], basis_i, grid->cells[cell_i]->coords[basis_i] );
+					basis = phi->basis[cell_i]->EvalIJ( tri->qi[quad_i], basis_i );
 					flux[cell_i][basis_i] += weight*tracer*basis;
 				}
 			}

@@ -45,19 +45,19 @@ double p1( double* p ) {
 }
 
 int main() {
-	Grid*				pgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, 1, true );
-	Grid*				vgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, 2, false );
-	Field*				velx	= new Field( vgrid );
-	Field*				vely	= new Field( vgrid );
-	Field*				phi		= new Field( pgrid );
+	Grid*	pgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, 1, true );
+	Grid*	vgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, 2, false );
+	Field*	velx	= new Field( vgrid );
+	Field*	vely	= new Field( vgrid );
+	Field*	phi		= new Field( pgrid );
 	CFA*	cdg		= new CFA( phi, velx, vely );
-	int					i, j;
-	int					nsteps	= 64*4;
-	int					dump	= 1;
-	double				dt		= M_PI/nsteps;
-	Field*				ans		= new Field( pgrid );
-	double				err		= 0.0;
-	double				norm	= 0.0;
+	int		i, j;
+	int		nsteps	= 64*4;
+	int		dump	= 1;
+	double	dt		= M_PI/nsteps;
+	Field*	ans		= new Field( pgrid );
+	double	err		= 0.0;
+	double	norm	= 0.0;
 
 	for( i = 0; i < vgrid->nCells; i++ ) {
 		for( j = 0; j < vgrid->cells[i]->nc; j++ ) {
@@ -97,6 +97,9 @@ int main() {
 		}
 	}
 	cout << "error: " << err/norm << endl;
+	cout << "analytic mass: " << ans->IntegrateConstant() << endl;
+	cout << "numeric mass:  " << phi->IntegrateConstant() << endl;
+	cout << "mass loss:     " << 1.0 - phi->IntegrateConstant()/ans->IntegrateConstant() << endl;
 
 	delete pgrid;
 	delete vgrid;

@@ -22,29 +22,22 @@ double func( double* x ) {
 }
 
 double Integrate( Field* field, Func* func ) {
-    double      volg    = 0.0;
-    double      volp;
-    double      volt;
+    double      vol		= 0.0;
     int         pi, ti, qi;
 	Grid*		grid	= field->grid;
     Cell*    	cell;
     Triangle*   tri;
 
     for( pi = 0; pi < grid->nCells; pi++ ) {
-        volp = 0.0;
         cell = grid->cells[pi];
         for( ti = 0; ti < cell->n; ti++ ) {
-            volt = 0.0;
             tri = cell->tris[ti];
             for( qi = 0; qi < tri->nQuadPts; qi++ ) {
-                volt += tri->wi[qi]*func( tri->qi[qi] )*tri->Area();
+                vol += tri->wi[qi]*func( tri->qi[qi] )*tri->Area();
             }
-            volp += volt;
         }
-
-        volg += volp;
     }
-    return volg;
+    return vol;
 }
 
 int main() {
