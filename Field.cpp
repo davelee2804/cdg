@@ -20,7 +20,7 @@ Field::Field( Grid* _grid ) {
 
 	basis = new Basis*[grid->nCells];
 	for( i = 0; i < grid->nCells; i++ ) {
-		basis[i] = new Basis( grid->basisOrder, grid->cells[i]->origin );
+		basis[i] = new Basis( grid->basisOrder, grid->cells[i]->origin, grid->cells[i] );
 	}
 }
 
@@ -104,6 +104,8 @@ void Field::Write( string fname, int tstep ) {
 	ofstream file;
 	char filename[80];
 	int i, j, k, l;
+	Cell* cell;
+	Basis* basis_i;
 
 	sprintf( filename, "output/%s.%.4u.txt", fname.c_str(), tstep );
 	file.open( filename );
@@ -111,7 +113,10 @@ void Field::Write( string fname, int tstep ) {
 		for( j = 0; j < grid->basisOrder; j++ ) {
 			for( k = 0; k < grid->nx; k++ ) {
 				for( l = 0; l < grid->basisOrder; l++ ) {
-					file << basis[i*grid->nx+k]->ci[j*grid->basisOrder+l] << endl;
+					//file << basis[i*grid->nx+k]->ci[j*grid->basisOrder+l] << endl;
+					cell = grid->cells[i*grid->nx+k];
+					basis_i = basis[i*grid->nx+k];
+					file << basis_i->EvalFull( cell->coords[j*grid->basisOrder+l] ) << endl;
 				}
 			}
 		}

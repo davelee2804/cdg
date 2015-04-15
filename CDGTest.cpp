@@ -82,10 +82,12 @@ int main() {
 	ans->Write( "ans", 0 );
 	phi->Write( "phi", 0 );
 
+	cout << "volume: " << phi->Integrate() << endl;
+
 	for( i = 1; i <= nsteps; i++ ) {
 		cout << "time step: " << i;
 		cdg->Advect( dt );
-		cout << "...done, volume: " << phi->Integrate() << endl;
+		cout << "\t...done, volume: " << phi->Integrate() << endl;
 		if( i%dump == 0 ) {
 			phi->Write( "phi", i );
 		}

@@ -15,8 +15,8 @@
 using namespace std;
 #endif
 
-#define ADV_FORWARD +1
-#define ADV_BACKWARD -1
+#define ADV_FORWARD (+1)
+#define ADV_BACKWARD (-1)
 
 CFA::CFA( Field* _phi, Field* _velx, Field* _vely ) {
 	phi  = _phi;

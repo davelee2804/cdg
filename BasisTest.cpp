@@ -27,12 +27,11 @@ double func( double* x ) {
 int main() {
 	int			nx			= 1;
 	int			ny			= 1;
-	int			i, j, k, l;
+	int			i, j, k;
 	Grid*		grid;
 	Field*		field;
 	Cell* 		cell;
 	Basis*		basis;
-	Triangle*	tri;
 	double		ans			= 16.0/M_PI/M_PI;
 	double		vol;
 	CDG*		cdg;
@@ -40,7 +39,6 @@ int main() {
 	Field*		vely;
 	double*		beta_ij_2;
 	double*		cj;
-	double		weight;
 
 	cout << "testing the basis function matrix inverse..." << endl;
 	for( i = 0; i < 8; i++ ) {

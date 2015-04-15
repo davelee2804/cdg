@@ -1,8 +1,10 @@
+#include <cstdlib>
+
 #include "Edge.h"
 #include "Triangle.h"
-#include "Basis.h"
 #include "Polygon.h"
 #include "Cell.h"
+#include "Basis.h"
 #include "Grid.h"
 #include "Field.h"
 #include "CFA.h"
@@ -10,6 +12,8 @@
 
 #define ADV_FORWARD (+1)
 #define ADV_BACKWARD (-1)
+
+//#define CDG_TEST 1
 
 CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) {
 	int 		i, j, k, l, pi;
@@ -98,11 +102,10 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	Cell		*incPoly;
 	Triangle*	tri;
 	int			pinds[6], left, right, into;
-	double 		weight, qf[2], tracer, basis, sign;
+	double 		weight, qf[2], tracer, basis;
 	int			order	= grid->basisOrder;
 	int			nBasis	= order*order;
 	double**	flux;
-	double**	preCoords;
 
 	pts = new double*[4];
 	pts[0] = new double[2];
@@ -116,11 +119,6 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
 			flux[cell_i][basis_i] = 0.0;
 		}
-	}
-
-	preCoords = new double*[nBasis];
-	for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
-		preCoords[basis_i] = new double[2];
 	}
 
 	for( edge_i = 0; edge_i < grid->nEdges; edge_i++ ) {
@@ -166,36 +164,46 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		   upper point of the final edge is > 0, then the flux is rightwards across the edge */
         into = ( GetNorm( grid->edges[edge_i]->v1, grid->edges[edge_i]->v2, preGrid->edges[edge_i]->v2 ) > 0.0 ) ? right : left;
         for( cell_i = 0; cell_i < 6; cell_i++ ) {
-			sign = ( pinds[cell_i] == into ) ? +1.0 : -1.0;
-			//if( into == pinds[cell_i] ) {
-			//	continue;
-			//}
-
 			incPoly = grid->cells[pinds[cell_i]];
 			intPoly = prePoly->Intersection( incPoly );
 			if( intPoly ) {
 				for( tri_i = 0; tri_i < intPoly->n; tri_i++ ) {
 					tri = intPoly->tris[tri_i];
 					for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
-						//TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
-						for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
-							TraceRK2( dt, ADV_BACKWARD, grid->cells[pinds[cell_i]]->coords[basis_i], preCoords[basis_i] );
+						TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
+						into = grid->GetCellIndex( qf );
+
+#ifdef CDG_TEST
+						if( qf[0] < grid->minx || qf[0] > grid->maxx || qf[1] < grid->miny || qf[1] > grid->maxy ) {
+							cerr << "ERROR: quadrature point outside domain..." << endl;
+							incPoly->Print();
+							cout << "[" << qf[0] << ", " << qf[1] << "]" << endl; 
+							continue;
 						}
+
+						if( !intPoly->IsInside( tri->qi[quad_i] ) ) {
+							cerr << "ERROR: quadrature point outside intersecting polygon...";
+							if( grid->FindCell( tri->qi[quad_i] ) != incPoly ) {
+								cerr << " or the incident polygon...";
+								abort();
+							}
+							cerr << endl;
+							intPoly->Print();
+							cout << "[" << intPoly->verts[0][0] << ", " << intPoly->verts[0][1] << "]" << endl; 
+							cout << "[" << tri->qi[quad_i][0] << ", " << tri->qi[quad_i][1] << "]" << endl; 
+							continue;
+						}
+#endif
 
 						weight = tri->wi[quad_i]*tri->Area()/incPoly->Area();
 
-						//tracer = phi->basis[pinds[cell_i]]->EvalFull( tri->qi[quad_i], grid->cells[pinds[cell_i]]->coords );
-						//tracer = phi->basis[into]->EvalFull( qf, grid->cells[into]->coords );
-						//tracer = phi->basis[into]->EvalFull( tri->qi[quad_i], preCoords );
 						tracer = phi->basis[pinds[cell_i]]->EvalFull( tri->qi[quad_i] );
 
 						for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
-							//basis = phi->basis[into]->EvalIJ( qf, basis_i, grid->cells[into]->coords[basis_i] );
-							basis = phi->basis[into]->EvalIJ( tri->qi[quad_i], basis_i );
+							basis = phi->basis[into]->EvalIJ( qf, basis_i );
 
-							flux[pinds[cell_i]][basis_i] += sign*weight*tracer*basis;
-							//flux[into][basis_i] += weight*tracer*basis;
-							//flux[pinds[cell_i]][basis_i] -= weight*tracer*basis;
+							flux[into][basis_i] += weight*tracer*basis;
+							flux[pinds[cell_i]][basis_i] -= weight*tracer*basis;
 						}
 					}
 				}
@@ -241,11 +249,6 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		delete[] flux[cell_i];
 	}
 	delete[] flux;
-
-	for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
-		delete[] preCoords[basis_i];
-	}
-	delete[] preCoords;
 }
 
 #if 0

@@ -44,7 +44,7 @@ Polygon::~Polygon() {
 	delete[] tris;
 }
 
-#define R2_TOL 1.0e-8
+#define R2_TOL 1.0e-6
 
 int Polygon::AddPoint( double** pts, int np, double* pt ) {
 	int i;
@@ -213,7 +213,7 @@ void Polygon::Print() {
 	int vi;
 
 	for( vi = 0; vi < n; vi++ ) {
-		cout << verts[vi][0] << " " << verts[vi][1] << endl;
+		cout << "[" << verts[vi][0] << ", " << verts[vi][1] << "]" << endl;
 	}
 }
 
