@@ -22,9 +22,20 @@ CFA::CFA( Field* _phi, Field* _velx, Field* _vely ) {
 	phi  = _phi;
 	velx = _velx;
 	vely = _vely;
+
+	pts = new double*[4];
+	pts[0] = new double[2];
+	pts[1] = new double[2];
+	pts[2] = new double[2];
+	pts[3] = new double[2];
 }
 
 CFA::~CFA() {
+	delete[] pts[0];
+	delete[] pts[1];
+	delete[] pts[2];
+	delete[] pts[3];
+	delete[] pts;
 }
 
 void CFA::Advect( double dt ) {
@@ -94,83 +105,95 @@ double CFA::GetNorm( double* a, double* b, double* c ) {
 	return ab[0]*ac[1] - ab[1]*ac[0];
 }
 
+Polygon* CFA::CreatePreImage( int ei, Grid* grid, Grid* preGrid, int* into, int* pinds ) {
+	Edge* e1 = grid->edges[ei];
+	Edge* e2 = preGrid->edges[ei];
+	int left, right, norm;
+	Polygon* poly;
+
+	norm = ei/((grid->nx+1)*grid->ny);
+
+	/* ignore boundaries and edges incident on boundaries for now */
+	if( !grid->GetEdgeCellInds( ei, pinds ) ) {
+		return NULL;
+	}
+
+	if( norm == 0 ) {
+		left = pinds[2];
+		right = pinds[3];
+
+		/* verts must be clockwise */
+		pts[0][0] = e1->v2[0];
+		pts[0][1] = e1->v2[1];
+		pts[1][0] = e1->v1[0];
+		pts[1][1] = e1->v1[1];
+		pts[2][0] = e2->v1[0];
+		pts[2][1] = e2->v1[1];
+		pts[3][0] = e2->v2[0];
+		pts[3][1] = e2->v2[1];
+	}
+	else {
+		left = pinds[4];
+		right = pinds[1];
+
+		/* verts must be clockwise */
+		pts[0][0] = e1->v1[0];
+		pts[0][1] = e1->v1[1];
+		pts[1][0] = e1->v2[0];
+		pts[1][1] = e1->v2[1];
+		pts[2][0] = e2->v2[0];
+		pts[2][1] = e2->v2[1];
+		pts[3][0] = e2->v1[0];
+		pts[3][1] = e2->v1[1];
+	}
+
+	poly = new Polygon( pts, 4, preGrid->quadOrder );
+
+	/* if the cross product of the edge and the vector made by the lower point of the original edge and the 
+	   upper point of the final edge is > 0, then the flux is rightwards across the edge */
+	*into = ( GetNorm( grid->edges[ei]->v1, grid->edges[ei]->v2, preGrid->edges[ei]->v2 ) > 0.0 ) ? right : left;
+
+#ifdef CFA_TEST
+	Edge* te1 = new Edge( pts[0], pts[3] );
+	Edge* te2 = new Edge( pts[1], pts[2] );
+	double pt[2];
+	if( te1->Intersection( te2, pt ) ) {
+		cerr << "ERROR: swept region is a bowtie, edge id:" << ei << endl; 
+		abort();
+	}
+	delete te1;
+	delete te2;
+#endif
+
+	return poly;
+}
+
 void CFA::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
-	int 	ei, norm, xi, yj, pi;
+	int 	ei, pi, pinds[6], into;
 	Grid*	grid	= phi->grid;
-	double 	**pts;
 	Polygon	*prePoly, *intPoly;
 	Cell*	incPoly;
-	int		pinds[6], left, right, into;
 	double 	weight;
 
-	pts = new double*[4];
-	pts[0] = new double[2];
-	pts[1] = new double[2];
-	pts[2] = new double[2];
-	pts[3] = new double[2];
-
 	for( ei = 0; ei < grid->nEdges; ei++ ) {
-		grid->EdgeIndexToCoord( ei, &norm, &xi, &yj );
-
-		/* ignore boundaries and edges incident on boundaries for now */
-		if( !grid->GetEdgeCellInds( ei, pinds ) ) {
+		prePoly = CreatePreImage( ei, grid, preGrid, &into, pinds );
+		if( prePoly == NULL ) {
 			continue;
 		}
 
-		if( norm == 0 ) {
-			left = pinds[2];
-			right = pinds[3];
-
-			/* verts must be clockwise */
-			pts[0][0] = grid->edges[ei]->v2[0];
-			pts[0][1] = grid->edges[ei]->v2[1];
-			pts[1][0] = grid->edges[ei]->v1[0];
-			pts[1][1] = grid->edges[ei]->v1[1];
-			pts[2][0] = preGrid->edges[ei]->v1[0];
-			pts[2][1] = preGrid->edges[ei]->v1[1];
-			pts[3][0] = preGrid->edges[ei]->v2[0];
-			pts[3][1] = preGrid->edges[ei]->v2[1];
-		}
-		else {
-			left = pinds[4];
-			right = pinds[1];
-
-			/* verts must be clockwise */
-			pts[0][0] = grid->edges[ei]->v1[0];
-			pts[0][1] = grid->edges[ei]->v1[1];
-			pts[1][0] = grid->edges[ei]->v2[0];
-			pts[1][1] = grid->edges[ei]->v2[1];
-			pts[2][0] = preGrid->edges[ei]->v2[0];
-			pts[2][1] = preGrid->edges[ei]->v2[1];
-			pts[3][0] = preGrid->edges[ei]->v1[0];
-			pts[3][1] = preGrid->edges[ei]->v1[1];
-		}
-
-#ifdef CFA_TEST
-		Edge* e1 = new Edge( pts[0], pts[3] );
-		Edge* e2 = new Edge( pts[1], pts[2] );
-		double pt[2];
-		if( e1->Intersection( e2, pt ) ) {
-			cerr << "ERROR: swept region is a bowtie, edge id:" << ei << endl; 
-			abort();
-		}
-		delete e1;
-		delete e2;
-#endif
-
-		prePoly = new Polygon( pts, 4, preGrid->quadOrder );
-
-		/* if the cross product of the edge and the vector made by the lower point of the original edge and the 
-		   upper point of the final edge is > 0, then the flux is rightwards across the edge */
-		into = ( GetNorm( grid->edges[ei]->v1, grid->edges[ei]->v2, preGrid->edges[ei]->v2 ) > 0.0 ) ? right : left;
 		for( pi = 0; pi < 6; pi++ ) {
-			if( pinds[pi] == into ) {
-				continue;
-			}
+			//if( pinds[pi] == into ) {
+			//	continue;
+			//}
 
 			incPoly = grid->cells[pinds[pi]];
 			intPoly = prePoly->Intersection( incPoly );
 			if( intPoly ) {
+				if( pinds[pi] == into ) {
+                    cerr << "ERROR: swept region intersection with inward fluxing cell, area fraction: " << intPoly->Area()/grid->dx/grid->dy << endl;
+                    //abort();
+                    continue;
+				}
 				weight = intPoly->Area()/incPoly->Area();
 				phiTemp->basis[into]->ci[0] += weight*phi->basis[pinds[pi]]->ci[0];
 				phiTemp->basis[pinds[pi]]->ci[0] -= weight*phi->basis[pinds[pi]]->ci[0];
@@ -179,10 +202,4 @@ void CFA::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		}
 		delete prePoly;
 	}
-
-	delete[] pts[0];
-	delete[] pts[1];
-	delete[] pts[2];
-	delete[] pts[3];
-	delete[] pts;
 }

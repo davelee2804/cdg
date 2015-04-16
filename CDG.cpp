@@ -93,25 +93,16 @@ void CDG::Advect( double dt ) {
 }
 
 void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
-	int 		cell_i, cell_x, cell_y, edge_i, basis_i, tri_i, quad_i, norm;
+	int 		cell_i, edge_i, basis_i, tri_i, quad_i;
 	Grid*		grid	= phi->grid;
-	int			nx 		= grid->nx;
-	int			ny 		= grid->ny;
-	double 		**pts;
 	Polygon 	*prePoly, *intPoly;
 	Cell		*incPoly;
 	Triangle*	tri;
-	int			pinds[6], left, right, into;
+	int			pinds[6], into;
 	double 		weight, qf[2], tracer, basis_in, basis_out;
 	int			order	= grid->basisOrder;
 	int			nBasis	= order*order;
 	double**	flux;
-
-	pts = new double*[4];
-	pts[0] = new double[2];
-	pts[1] = new double[2];
-	pts[2] = new double[2];
-	pts[3] = new double[2];
 
 	flux = new double*[grid->nCells];
 	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
@@ -122,54 +113,24 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	}
 
 	for( edge_i = 0; edge_i < grid->nEdges; edge_i++ ) {
-        grid->EdgeIndexToCoord( edge_i, &norm, &cell_x, &cell_y );
+        prePoly = CreatePreImage( edge_i, grid, preGrid, &into, pinds );
+		if( prePoly == NULL ) {
+			continue;
+		}
 
-        /* ignore boundaries and edges incident on boundaries for now */
-        if( !grid->GetEdgeCellInds( edge_i, pinds ) ) {
-            continue;
-        }
-
-        if( norm == 0 ) {
-            left = pinds[2];
-            right = pinds[3];
-
-            /* verts must be clockwise */
-            pts[0][0] = grid->edges[edge_i]->v2[0];
-            pts[0][1] = grid->edges[edge_i]->v2[1];
-            pts[1][0] = grid->edges[edge_i]->v1[0];
-            pts[1][1] = grid->edges[edge_i]->v1[1];
-            pts[2][0] = preGrid->edges[edge_i]->v1[0];
-            pts[2][1] = preGrid->edges[edge_i]->v1[1];
-            pts[3][0] = preGrid->edges[edge_i]->v2[0];
-            pts[3][1] = preGrid->edges[edge_i]->v2[1];
-        }
-        else {
-            left = pinds[4];
-            right = pinds[1];
-
-            /* verts must be clockwise */
-            pts[0][0] = grid->edges[edge_i]->v1[0];
-            pts[0][1] = grid->edges[edge_i]->v1[1];
-            pts[1][0] = grid->edges[edge_i]->v2[0];
-            pts[1][1] = grid->edges[edge_i]->v2[1];
-            pts[2][0] = preGrid->edges[edge_i]->v2[0];
-            pts[2][1] = preGrid->edges[edge_i]->v2[1];
-            pts[3][0] = preGrid->edges[edge_i]->v1[0];
-            pts[3][1] = preGrid->edges[edge_i]->v1[1];
-        }
-
-        prePoly = new Polygon( pts, 4, preGrid->quadOrder );
-
-        /* if the cross product of the edge and the vector made by the lower point of the original edge and the 
-		   upper point of the final edge is > 0, then the flux is rightwards across the edge */
-        into = ( GetNorm( grid->edges[edge_i]->v1, grid->edges[edge_i]->v2, preGrid->edges[edge_i]->v2 ) > 0.0 ) ? right : left;
         for( cell_i = 0; cell_i < 6; cell_i++ ) {
+			if( pinds[cell_i] == into ) {
+				continue;
+			}
+
 			incPoly = grid->cells[pinds[cell_i]];
 			intPoly = prePoly->Intersection( incPoly );
+
 			if( intPoly ) {
 				if( pinds[cell_i] == into ) {
 					cerr << "ERROR: swept region intersection with inward fluxing cell, area fraction: " << intPoly->Area()/grid->dx/grid->dy << endl;
-					abort();
+					//abort();
+					continue;
 				}
 
 				for( tri_i = 0; tri_i < intPoly->n; tri_i++ ) {
@@ -219,16 +180,8 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
         delete prePoly;
 	}
 		
+	/* add rhs contributions from previous cell */
 	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
-		cell_x = cell_i%nx;
-		cell_y = cell_i/nx;
-
-		/* ignore boundaries for now */
-		if( cell_x == 0 || cell_x == nx - 1 || cell_y == 0 || cell_y == ny - 1 ) {
-			continue;
-		}
-
-		/* add rhs contributions from previous cell */
 		for( tri_i = 0; tri_i < grid->cells[cell_i]->n; tri_i++ ) {
 			tri = grid->cells[cell_i]->tris[tri_i];
 			for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
@@ -244,12 +197,6 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		/* update the cell coefficients */
 		AXEB( betaInv_ij[cell_i], flux[cell_i], phiTemp->basis[cell_i]->ci, nBasis );
 	}
-
-	delete[] pts[0];
-	delete[] pts[1];
-	delete[] pts[2];
-	delete[] pts[3];
-	delete[] pts;
 
 	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
 		delete[] flux[cell_i];

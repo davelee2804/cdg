@@ -18,7 +18,7 @@ using namespace std;
 #define NY 32
 
 #define QUAD_ORDER 2
-#define BASIS_ORDER 1
+#define BASIS_ORDER 2
 
 double ux( double* p ) {
 	double radius	= sqrt( p[0]*p[0] + p[1]*p[1] );
@@ -35,7 +35,7 @@ double uy( double* p ) {
 }
 
 double p0( double* p ) {
-	double r2 = (p[0] + sqrt(0.125))*(p[0] + sqrt(0.125)) + (p[1] - sqrt(0.125))*(p[1] - sqrt(0.125));
+	double r2 = (p[0] + 0.0)*(p[0] + 0.0) + (p[1] - 0.5)*(p[1] - 0.5);
 	if( sqrt( r2 ) < 0.40 ) return exp(-40.0*r2);
 	return 0.0;
 }
@@ -54,7 +54,7 @@ int main() {
 	Field*		phi		= new Field( pgrid );
 	CDG*		cdg;
 	int			i, j;
-	int			nsteps	= 64*2;
+	int			nsteps	= 64*4;
 	int			dump	= 1;
 	double		dt		= M_PI/nsteps;
 	Field*		ans		= new Field( pgrid );
@@ -106,6 +106,7 @@ int main() {
 		}
 	}
 	cout << "error: " << err/norm << endl;
+	cout << "mass loss:     " << 1.0 - phi->IntegrateConstant()/ans->IntegrateConstant() << endl;
 
 	delete cdg;
 	delete phi;

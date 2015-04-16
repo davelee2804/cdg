@@ -44,7 +44,7 @@ Polygon::~Polygon() {
 	delete[] tris;
 }
 
-#define R2_TOL 1.0e-6
+#define R2_TOL 1.0e-8
 
 int Polygon::AddPoint( double** pts, int np, double* pt ) {
 	int i;
