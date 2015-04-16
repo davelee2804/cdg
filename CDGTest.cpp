@@ -18,7 +18,7 @@ using namespace std;
 #define NY 32
 
 #define QUAD_ORDER 2
-#define BASIS_ORDER 2
+#define BASIS_ORDER 1
 
 double ux( double* p ) {
 	double radius	= sqrt( p[0]*p[0] + p[1]*p[1] );
@@ -35,26 +35,26 @@ double uy( double* p ) {
 }
 
 double p0( double* p ) {
-	double r2 = (p[0] - 0.0)*(p[0] - 0.0) + (p[1] - 0.5)*(p[1] - 0.5);
-	if( sqrt( r2 ) < 0.64 ) return exp(-40.0*r2);
+	double r2 = (p[0] + sqrt(0.125))*(p[0] + sqrt(0.125)) + (p[1] - sqrt(0.125))*(p[1] - sqrt(0.125));
+	if( sqrt( r2 ) < 0.40 ) return exp(-40.0*r2);
 	return 0.0;
 }
 
 double p1( double* p ) {
 	double r2 = (p[0] + 0.5)*(p[0] + 0.5) + (p[1] - 0.0)*(p[1] - 0.0);
-	if( sqrt( r2 ) < 0.64 ) return exp(-40.0*r2);
+	if( sqrt( r2 ) < 0.40 ) return exp(-40.0*r2);
 	return 0.0;
 }
 
 int main() {
-	Grid*		vgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, false );
+	Grid*		vgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, 2, false );
 	Grid*		pgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
 	Field*		velx	= new Field( vgrid );
 	Field*		vely	= new Field( vgrid );
 	Field*		phi		= new Field( pgrid );
-	CDG*		cdg		= new CDG( phi, velx, vely );
+	CDG*		cdg;
 	int			i, j;
-	int			nsteps	= 64*4;
+	int			nsteps	= 64*2;
 	int			dump	= 1;
 	double		dt		= M_PI/nsteps;
 	Field*		ans		= new Field( pgrid );
@@ -74,6 +74,7 @@ int main() {
 			ans->basis[i]->ci[j] = p1( pgrid->cells[i]->coords[j] );
 		}
 	}
+	cdg	= new CDG( phi, velx, vely );
 
 	pgrid->Write( "pgrid" );
 	vgrid->Write( "vgrid" );

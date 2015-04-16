@@ -102,7 +102,7 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	Cell		*incPoly;
 	Triangle*	tri;
 	int			pinds[6], left, right, into;
-	double 		weight, qf[2], tracer, basis;
+	double 		weight, qf[2], tracer, basis_in, basis_out;
 	int			order	= grid->basisOrder;
 	int			nBasis	= order*order;
 	double**	flux;
@@ -167,11 +167,15 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 			incPoly = grid->cells[pinds[cell_i]];
 			intPoly = prePoly->Intersection( incPoly );
 			if( intPoly ) {
+				if( pinds[cell_i] == into ) {
+					cerr << "ERROR: swept region intersection with inward fluxing cell, area fraction: " << intPoly->Area()/grid->dx/grid->dy << endl;
+					abort();
+				}
+
 				for( tri_i = 0; tri_i < intPoly->n; tri_i++ ) {
 					tri = intPoly->tris[tri_i];
 					for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
 						TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
-						into = grid->GetCellIndex( qf );
 
 #ifdef CDG_TEST
 						if( qf[0] < grid->minx || qf[0] > grid->maxx || qf[1] < grid->miny || qf[1] > grid->maxy ) {
@@ -200,10 +204,12 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 						tracer = phi->basis[pinds[cell_i]]->EvalFull( tri->qi[quad_i] );
 
 						for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
-							basis = phi->basis[into]->EvalIJ( qf, basis_i );
+							basis_in = phi->basis[into]->EvalIJ( qf, basis_i );
+							basis_out = phi->basis[pinds[cell_i]]->EvalIJ( tri->qi[quad_i], basis_i );
+							//basis_out = phi->basis[pinds[cell_i]]->EvalIJ( qf, basis_i );
 
-							flux[into][basis_i] += weight*tracer*basis;
-							flux[pinds[cell_i]][basis_i] -= weight*tracer*basis;
+							flux[into][basis_i] += weight*tracer*basis_in;
+							flux[pinds[cell_i]][basis_i] -= weight*tracer*basis_out;
 						}
 					}
 				}
@@ -229,8 +235,8 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 				weight = tri->wi[quad_i]*tri->Area()/grid->cells[cell_i]->Area();
 				tracer = phi->basis[cell_i]->EvalFull( tri->qi[quad_i] );
 				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
-					basis = phi->basis[cell_i]->EvalIJ( tri->qi[quad_i], basis_i );
-					flux[cell_i][basis_i] += weight*tracer*basis;
+					basis_in = phi->basis[cell_i]->EvalIJ( tri->qi[quad_i], basis_i );
+					flux[cell_i][basis_i] += weight*tracer*basis_in;
 				}
 			}
 		}

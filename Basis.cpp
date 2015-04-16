@@ -33,7 +33,8 @@ double Basis::EvalIJ( double* pt, int i ) {
 #ifdef BASIS_TEST
 	if( !poly->IsInside( pt ) ) {
 		cerr << "ERROR: basis function to be evaluated at point outside corresponding polygon..." << endl;
-		abort(); 
+		cerr << "[" << pt[0] << ", " << pt[1] << "]" << endl;
+		//abort(); 
 	}
 #endif
 

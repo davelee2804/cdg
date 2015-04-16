@@ -113,7 +113,6 @@ void Field::Write( string fname, int tstep ) {
 		for( j = 0; j < grid->basisOrder; j++ ) {
 			for( k = 0; k < grid->nx; k++ ) {
 				for( l = 0; l < grid->basisOrder; l++ ) {
-					//file << basis[i*grid->nx+k]->ci[j*grid->basisOrder+l] << endl;
 					cell = grid->cells[i*grid->nx+k];
 					basis_i = basis[i*grid->nx+k];
 					file << basis_i->EvalFull( cell->coords[j*grid->basisOrder+l] ) << endl;
