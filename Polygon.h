@@ -15,6 +15,3 @@ class Polygon {
 	private:
 		int			AddPoint( double** pts, int np, double* pt );
 };
-
-void MatInv( double* A, double* Ainv, int n );
-void AXEB( double* A, double* x, double* b, int n );

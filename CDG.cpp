@@ -8,6 +8,7 @@
 #include "Grid.h"
 #include "Field.h"
 #include "CFA.h"
+#include "LinAlg.h"
 #include "CDG.h"
 
 #define ADV_FORWARD (+1)
@@ -92,17 +93,53 @@ void CDG::Advect( double dt ) {
 	delete preGrid;
 }
 
+void CDG::BasisProjection( int kp, int k, double* Pij ) {
+	int tri_i, quad_i, basis_m, basis_j;
+	Grid* 		grid 		= phi->grid;
+	Cell* 		cell 		= grid->cells[kp];
+	Basis*		basis_k		= phi->basis[k];
+	Basis*		basis_kp	= phi->basis[kp];
+	Triangle* 	tri;
+	int			nBasis 		= grid->basisOrder*grid->basisOrder;
+	int			nBasis2		= nBasis*nBasis;
+	double		beta_mj[nBasis2];
+	double		weight, *coord;
+
+	for( basis_j = 0; basis_j < nBasis2; basis_j++ ) {
+		beta_mj[basis_j] = 0.0;
+	}
+
+	for( tri_i = 0; tri_i < cell->n; tri_i++ ) {
+		tri = cell->tris[tri_i];
+		for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
+			weight = tri->wi[quad_i]*tri->Area()/cell->Area();
+			coord = tri->qi[quad_i];
+			for( basis_m = 0; basis_m < nBasis; basis_m++ ) {
+				for( basis_j = 0; basis_j < nBasis; basis_j++ ) {
+						beta_mj[basis_m*nBasis+basis_j] += weight*basis_kp->EvalIJ( coord, basis_m )*basis_k->EvalIJ( coord, basis_j );
+				}
+			}
+		}
+	}
+
+	Mult( betaInv_ij[kp], beta_mj, Pij, nBasis );
+}
+
 void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	int 		cell_i, edge_i, basis_i, tri_i, quad_i;
 	Grid*		grid	= phi->grid;
 	Polygon 	*prePoly, *intPoly;
 	Cell		*incPoly;
 	Triangle*	tri;
-	int			pinds[6], into;
+	int			pinds[6], into, from;
 	double 		weight, qf[2], tracer, basis_in, basis_out;
 	int			order	= grid->basisOrder;
 	int			nBasis	= order*order;
+	int			nBasis2	= nBasis*nBasis;
 	double**	flux;
+	double		F_kj[nBasis];
+	double		F_kpi[nBasis];
+	double		Pij[nBasis2];
 
 	flux = new double*[grid->nCells];
 	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
@@ -113,10 +150,15 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	}
 
 	for( edge_i = 0; edge_i < grid->nEdges; edge_i++ ) {
-        prePoly = CreatePreImage( edge_i, grid, preGrid, &into, pinds );
+        prePoly = CreatePreImage( edge_i, grid, preGrid, &into, &from, pinds );
 		if( prePoly == NULL ) {
 			continue;
 		}
+
+		/*for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
+			F_kj[basis_i] = 0.0;
+			F_kpi[basis_i] = 0.0;
+		}*/
 
         for( cell_i = 0; cell_i < 6; cell_i++ ) {
 			if( pinds[cell_i] == into ) {
@@ -131,6 +173,11 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 					cerr << "ERROR: swept region intersection with inward fluxing cell, area fraction: " << intPoly->Area()/grid->dx/grid->dy << endl;
 					//abort();
 					continue;
+				}
+
+				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
+					F_kj[basis_i] = 0.0;
+					F_kpi[basis_i] = 0.0;
 				}
 
 				for( tri_i = 0; tri_i < intPoly->n; tri_i++ ) {
@@ -161,23 +208,37 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 #endif
 
 						weight = tri->wi[quad_i]*tri->Area()/incPoly->Area();
-
 						tracer = phi->basis[pinds[cell_i]]->EvalFull( tri->qi[quad_i] );
 
 						for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
 							basis_in = phi->basis[into]->EvalIJ( qf, basis_i );
 							basis_out = phi->basis[pinds[cell_i]]->EvalIJ( tri->qi[quad_i], basis_i );
-							//basis_out = phi->basis[pinds[cell_i]]->EvalIJ( qf, basis_i );
 
-							flux[into][basis_i] += weight*tracer*basis_in;
-							flux[pinds[cell_i]][basis_i] -= weight*tracer*basis_out;
+							//flux[into][basis_i] += weight*tracer*basis_in;
+							//flux[pinds[cell_i]][basis_i] -= weight*tracer*basis_out;
+
+							F_kj[basis_i] -= weight*tracer*basis_out;
 						}
 					}
 				}
 				delete intPoly;
+
+				BasisProjection( into, pinds[cell_i], Pij );
+				AXEB( Pij, F_kj, F_kpi, nBasis );
+				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
+					flux[into][basis_i] -= F_kpi[basis_i];
+					flux[pinds[cell_i]][basis_i] += F_kj[basis_i];
+				}
 			}
         }
         delete prePoly;
+
+		/*BasisProjection( into, from, Pij );
+		AXEB( Pij, F_kj, F_kpi, nBasis );
+		for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
+			flux[into][basis_i] -= F_kpi[basis_i];
+			flux[from][basis_i] += F_kj[basis_i];
+		}*/
 	}
 		
 	/* add rhs contributions from previous cell */

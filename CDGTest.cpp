@@ -10,6 +10,7 @@
 #include "Basis.h"
 #include "Field.h"
 #include "CFA.h"
+#include "LinAlg.h"
 #include "CDG.h"
 
 using namespace std;

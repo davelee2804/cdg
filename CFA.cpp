@@ -105,7 +105,7 @@ double CFA::GetNorm( double* a, double* b, double* c ) {
 	return ab[0]*ac[1] - ab[1]*ac[0];
 }
 
-Polygon* CFA::CreatePreImage( int ei, Grid* grid, Grid* preGrid, int* into, int* pinds ) {
+Polygon* CFA::CreatePreImage( int ei, Grid* grid, Grid* preGrid, int* into, int* from, int* pinds ) {
 	Edge* e1 = grid->edges[ei];
 	Edge* e2 = preGrid->edges[ei];
 	int left, right, norm;
@@ -152,6 +152,7 @@ Polygon* CFA::CreatePreImage( int ei, Grid* grid, Grid* preGrid, int* into, int*
 	/* if the cross product of the edge and the vector made by the lower point of the original edge and the 
 	   upper point of the final edge is > 0, then the flux is rightwards across the edge */
 	*into = ( GetNorm( grid->edges[ei]->v1, grid->edges[ei]->v2, preGrid->edges[ei]->v2 ) > 0.0 ) ? right : left;
+	*from = ( *into == left ) ? right : left;
 
 #ifdef CFA_TEST
 	Edge* te1 = new Edge( pts[0], pts[3] );
@@ -169,14 +170,14 @@ Polygon* CFA::CreatePreImage( int ei, Grid* grid, Grid* preGrid, int* into, int*
 }
 
 void CFA::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
-	int 	ei, pi, pinds[6], into;
+	int 	ei, pi, pinds[6], into, from;
 	Grid*	grid	= phi->grid;
 	Polygon	*prePoly, *intPoly;
 	Cell*	incPoly;
 	double 	weight;
 
 	for( ei = 0; ei < grid->nEdges; ei++ ) {
-		prePoly = CreatePreImage( ei, grid, preGrid, &into, pinds );
+		prePoly = CreatePreImage( ei, grid, preGrid, &into, &from, pinds );
 		if( prePoly == NULL ) {
 			continue;
 		}
