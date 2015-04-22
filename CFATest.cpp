@@ -13,8 +13,8 @@
 
 using namespace std;
 
-#define NX 32
-#define NY 32
+#define NX 64
+#define NY 64
 
 #define QUAD_ORDER 2
 
@@ -50,11 +50,11 @@ int main() {
 	Field*	velx	= new Field( vgrid );
 	Field*	vely	= new Field( vgrid );
 	Field*	phi		= new Field( pgrid );
-	CFA*	cdg		= new CFA( phi, velx, vely );
+	CFA*	cfa		= new CFA( phi, velx, vely );
 	int		i, j;
 	int		nsteps	= 64*4;
 	int		dump	= 1;
-	double	dt		= M_PI/nsteps;
+	double	dt		= 0.5*M_PI/nsteps;
 	Field*	ans		= new Field( pgrid );
 	double	err		= 0.0;
 	double	norm	= 0.0;
@@ -80,8 +80,8 @@ int main() {
 	ans->Write( "ans", 0 );
 
 	for( i = 1; i <= nsteps; i++ ) {
-		cout << "time step: " << i << endl;
-		cdg->Advect( dt );
+		cout << "time step: " << i << "\tdt: " << dt << endl;
+		cfa->Advect( dt );
 		if( i%dump == 0 ) {
 			phi->Write( "phi", i );
 		}
@@ -106,7 +106,7 @@ int main() {
 	delete velx;
 	delete vely;
 	delete phi;
-	delete cdg;
+	delete cfa;
 
 	return 1;
 }

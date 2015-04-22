@@ -7,7 +7,10 @@
 #include "Field.h"
 #include "CFA.h"
 
-#define CFA_TEST 1
+#include "./core/core"
+#include <vector>
+
+//#define CFA_TEST 1
 
 #ifdef CFA_TEST
 #include <iostream>
@@ -183,18 +186,17 @@ void CFA::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		}
 
 		for( pi = 0; pi < 6; pi++ ) {
-			//if( pinds[pi] == into ) {
-			//	continue;
-			//}
-
 			incPoly = grid->cells[pinds[pi]];
-			intPoly = prePoly->Intersection( incPoly );
+			//intPoly = prePoly->Intersection( incPoly );
+			intPoly = Intersection( prePoly, incPoly );
 			if( intPoly ) {
-				if( pinds[pi] == into ) {
-                    cerr << "ERROR: swept region intersection with inward fluxing cell, area fraction: " << intPoly->Area()/grid->dx/grid->dy << endl;
-                    //abort();
-                    continue;
+#ifdef CFA_TEST
+				if( pinds[pi] == into && intPoly->Area()/grid->dx/grid->dy > 1.0e-8 ) {
+					cerr << "ERROR: swept region intersection with inward fluxing cell, area fraction: " << intPoly->Area()/grid->dx/grid->dy << endl;
+					//abort();
+					//continue;
 				}
+#endif
 				weight = intPoly->Area()/incPoly->Area();
 				phiTemp->basis[into]->ci[0] += weight*phi->basis[pinds[pi]]->ci[0];
 				phiTemp->basis[pinds[pi]]->ci[0] -= weight*phi->basis[pinds[pi]]->ci[0];
@@ -203,4 +205,47 @@ void CFA::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		}
 		delete prePoly;
 	}
+}
+
+Polygon* CFA::Intersection( Polygon* poly1, Polygon* poly2 ) {
+	int i, n;
+
+	typedef core::point<double> Point;
+	typedef std::vector<Point> Vec_Point;
+
+	Vec_Point p1(poly1->n), p2(poly2->n), intersect;
+	double** pts;
+	Polygon* poly;
+
+	for( i = 0; i < poly1->n; i++ ) {
+		p1[i].x = poly1->verts[i][0];
+		p1[i].y = poly1->verts[i][1];
+	}
+	for( i = 0; i < poly2->n; i++ ) {
+		p2[i].x = poly2->verts[i][0];
+		p2[i].y = poly2->verts[i][1];
+	}
+
+	core::polygon_intersection( p1, p2, intersect );
+
+	n = intersect.size();
+	if( !n ) {
+		return NULL;
+	}
+
+	pts = new double*[n];
+	for( i = 0; i < n; i++ ) {
+		pts[i] = new double[2];
+		pts[i][0] = intersect[n-1-i].x;
+		pts[i][1] = intersect[n-1-i].y;
+	}
+
+	poly = new Polygon( pts, n, poly1->tris[0]->order );
+
+	for( i = 0; i < n; i++ ) {
+		delete[] pts[i];
+	}
+	delete[] pts;
+
+	return poly;
 }

@@ -58,9 +58,9 @@ TriangleTest.o: TriangleTest.cpp Triangle.o Edge.o
 	${CC} -c TriangleTest.cpp ${FLAGS}
 
 CDG.o: CDG.cpp CDG.h LinAlg.o CFA.o Field.o Basis.o Grid.o Cell.o Polygon.o Triangle.o Edge.o
-	${CC} -c CDG.cpp ${FLAGS}
+	${CC} -I ./core/ -c CDG.cpp ${FLAGS}
 CFA.o: CFA.cpp CFA.h Field.o Basis.o Grid.o Cell.o Polygon.o Basis.o Triangle.o Edge.o
-	${CC} -c CFA.cpp ${FLAGS}
+	${CC} -I ./core/ -c CFA.cpp ${FLAGS}
 Field.o: Field.cpp Field.h Basis.o Grid.o Cell.o Polygon.o Basis.o Triangle.o Edge.o
 	${CC} -c Field.cpp ${FLAGS}
 Basis.o: Basis.cpp Basis.h Cell.o Polygon.o Triangle.o Edge.o

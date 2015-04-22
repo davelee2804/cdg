@@ -12,4 +12,5 @@ class CFA {
 		void TraceRK2( double dt, int dir, double* xi, double* xf );
 		double GetNorm( double* a, double* b, double* c );
 		Polygon* CreatePreImage( int ei, Grid* grid, Grid* preGrid, int* into, int* from, int* pinds );
+		Polygon* Intersection( Polygon* poly1, Polygon* poly2 );
 };
