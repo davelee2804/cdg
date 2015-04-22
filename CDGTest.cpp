@@ -19,7 +19,7 @@ using namespace std;
 #define NY 32
 
 #define QUAD_ORDER 2
-#define BASIS_ORDER 2
+#define BASIS_ORDER 1
 
 double ux( double* p ) {
 	double radius	= sqrt( p[0]*p[0] + p[1]*p[1] );
@@ -57,7 +57,7 @@ int main() {
 	int			i, j;
 	int			nsteps	= 64*4;
 	int			dump	= 1;
-	double		dt		= M_PI/nsteps;
+	double		dt		= 0.5*M_PI/nsteps;
 	Field*		ans		= new Field( pgrid );
 	double		err		= 0.0;
 	double		norm	= 0.0;

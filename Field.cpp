@@ -20,7 +20,7 @@ Field::Field( Grid* _grid ) {
 
 	basis = new Basis*[grid->nCells];
 	for( i = 0; i < grid->nCells; i++ ) {
-		basis[i] = new Basis( grid->basisOrder, grid->cells[i]->origin, grid->cells[i] );
+		basis[i] = new Basis( grid->basisOrder, grid->cells[i]->origin );
 	}
 }
 

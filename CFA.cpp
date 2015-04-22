@@ -72,10 +72,12 @@ void CFA::TraceRK2( double dt, int dir, double* xi, double* xf ) {
 	/* assume cfl < 1.0 */
 	xhalf[0] = xorig[0] + dir*dt*vorig[0];
 	xhalf[1] = xorig[1] + dir*dt*vorig[1];
+	CheckBounds( xhalf );
 	velx->LinearInterp( xhalf, vhalf + 0 );
 	vely->LinearInterp( xhalf, vhalf + 1 );
 	xf[0] = xorig[0] + dir*0.5*dt*( vhalf[0] + vorig[0] );
 	xf[1] = xorig[1] + dir*0.5*dt*( vhalf[1] + vorig[1] );
+	CheckBounds( xf );
 }
 
 void CFA::CalcChars( Grid* preGrid, double dt ) {
@@ -106,6 +108,13 @@ double CFA::GetNorm( double* a, double* b, double* c ) {
 	ac[1] = c[1] - a[1];
 
 	return ab[0]*ac[1] - ab[1]*ac[0];
+}
+
+void CFA::CheckBounds( double* pt ) {
+	if( pt[0] < phi->grid->minx ) pt[0] = phi->grid->minx + 1.0e-8;
+	if( pt[0] > phi->grid->maxx ) pt[0] = phi->grid->maxx - 1.0e-8;
+	if( pt[1] < phi->grid->miny ) pt[1] = phi->grid->miny + 1.0e-8;
+	if( pt[1] > phi->grid->maxy ) pt[1] = phi->grid->maxy - 1.0e-8;
 }
 
 Polygon* CFA::CreatePreImage( int ei, Grid* grid, Grid* preGrid, int* into, int* from, int* pinds ) {
@@ -234,6 +243,7 @@ Polygon* CFA::Intersection( Polygon* poly1, Polygon* poly2 ) {
 	}
 
 	pts = new double*[n];
+	/* add points in reverse order for consistency with clockwise polygon convection */
 	for( i = 0; i < n; i++ ) {
 		pts[i] = new double[2];
 		pts[i][0] = intersect[n-1-i].x;

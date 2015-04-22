@@ -1,6 +1,6 @@
 class Basis {
 	public:
-		Basis( int _order, double* _origin, Polygon* _poly );
+		Basis( int _order, double* _origin );
 		~Basis();
 		int 		order;
 		int 		nBasisFuncs;
