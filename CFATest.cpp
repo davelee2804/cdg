@@ -13,8 +13,8 @@
 
 using namespace std;
 
-#define NX 64
-#define NY 64
+#define NX 32
+#define NY 32
 
 #define QUAD_ORDER 2
 

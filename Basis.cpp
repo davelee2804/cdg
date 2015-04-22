@@ -15,8 +15,10 @@ Basis::Basis( int _order, double* _origin ) {
 	origin[0] = _origin[0];
 	origin[1] = _origin[1];
 
-	ci = new double[order*order];
-	for( i = 0; i < order*order; i++ ) {
+	nFuncs = order*order;
+
+	ci = new double[nFuncs];
+	for( i = 0; i < nFuncs; i++ ) {
 		ci[i] = 0.0;
 	}
 }
@@ -33,7 +35,7 @@ double Basis::EvalConst( double* pt ) {
 	int 	i;
 	double	result	= 0.0;
 
-	for( i = 0; i < order*order; i++ ) {
+	for( i = 0; i < nFuncs; i++ ) {
 		result += EvalIJ( pt, i );
 	}
 	return result;
@@ -43,7 +45,7 @@ double Basis::EvalFull( double* pt ) {
 	int 	i;
 	double	result	= 0.0;
 
-	for( i = 0; i < order*order; i++ ) {
+	for( i = 0; i < nFuncs; i++ ) {
 		result += ci[i]*EvalIJ( pt, i );
 	}
 	return result;

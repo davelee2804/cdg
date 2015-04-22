@@ -22,8 +22,7 @@ CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) 
 	Cell*		cell;
 	Triangle*	tri;
 	Basis*		basis;
-	int			order		= phi->basis[0]->order;
-	int			nBasis		= order*order;
+	int			nBasis		= phi->basis[0]->nFuncs;
 	double		fj[nBasis];
 	double		weight, *coord;
 	double		beta_ij[nBasis*nBasis];
@@ -133,8 +132,7 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	Triangle*	tri;
 	int			pinds[6], into, from;
 	double 		weight, tracer, basis_in, basis_out;
-	int			order	= grid->basisOrder;
-	int			nBasis	= order*order;
+	int			nBasis	= phi->basis[0]->nFuncs;
 	double**	flux, origin[2];
 	Basis*		basis;
 

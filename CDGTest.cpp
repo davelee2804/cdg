@@ -19,7 +19,7 @@ using namespace std;
 #define NY 32
 
 #define QUAD_ORDER 2
-#define BASIS_ORDER 1
+#define BASIS_ORDER 2
 
 double ux( double* p ) {
 	double radius	= sqrt( p[0]*p[0] + p[1]*p[1] );
