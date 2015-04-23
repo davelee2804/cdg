@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <cmath>
 
 #include "Edge.h"
 #include "Triangle.h"
@@ -26,6 +27,19 @@ CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) 
 	double		fj[nBasis];
 	double		weight, *coord;
 	double		beta_ij[nBasis*nBasis];
+
+	phiMax = -1.0e+10;
+	phiMin = +1.0e+10;
+	for( pi = 0; pi < grid->nCells; pi++ ) {
+		for( j = 0; j < nBasis; j++ ) {
+			if( phi->basis[pi]->ci[j] > phiMax ) {
+				phiMax = phi->basis[pi]->ci[j];
+			}
+			if( phi->basis[pi]->ci[j] < phiMin ) {
+				phiMin = phi->basis[pi]->ci[j];
+			}
+		}
+	}
 
 	betaInv_ij = new double*[grid->nCells];
 
@@ -124,6 +138,54 @@ void CDG::BasisProjection( int kp, int k, double* Pij ) {
 	Mult( betaInv_ij[kp], beta_mj, Pij, nBasis );
 }
 
+double MinMod( double a, double b, double c ) {
+	double ans;
+
+	if( a*b < 0.0 || b*c < 0.0 || c*a < 0.0 ) {
+		return 0.0;
+	}
+	ans = ( fabs(a) < fabs(b) ) ? a : b;
+	ans = ( ans < fabs(c) ) ? ans : c;
+	return ans;
+}
+
+void CDG::Limiter( Field* phiTemp, Basis* basisOld, int ci ) {
+	Cell* 		cell	= phi->grid->cells[ci];
+	Basis* 		basis	= phiTemp->basis[ci];
+	Triangle*	tri;
+	int			tri_i, quad_i, basis_i;
+	double		weight, avg = 0.0, tracer, alpha = 1.0, gamma;
+
+	for( tri_i = 0; tri_i < cell->n; tri_i++ ) {
+		tri = cell->tris[tri_i];
+		for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
+			weight = tri->wi[quad_i]*tri->Area()/cell->Area();
+			//tracer = basis->EvalFull( tri->qi[quad_i] );
+			tracer = basisOld->EvalWithCoeffs( tri->qi[quad_i], basis->ci );
+			avg += weight*tracer;
+		}
+	}
+
+	//if( ( avg - basis->ci[0] )*( avg - basis->ci[0] ) > 1.0e-20 ) {
+	if( avg > phiMax ) {
+		gamma = (phiMax - basis->ci[0])/(avg - basis->ci[0]);
+		alpha = ( alpha < gamma ) ? alpha : gamma;
+		alpha = ( alpha > 0.0 ) ? alpha : 0.0;
+		for( basis_i = 1; basis_i < basis->nFuncs; basis_i++ ) {
+			basis->ci[basis_i] *= alpha;
+		}
+	}
+	if( avg < phiMin ) {
+		gamma = (phiMin - basis->ci[0])/(avg - basis->ci[0]);
+		alpha = ( alpha < gamma ) ? alpha : gamma;
+		alpha = ( alpha > 0.0 ) ? alpha : 0.0;
+		for( basis_i = 1; basis_i < basis->nFuncs; basis_i++ ) {
+			basis->ci[basis_i] *= alpha;
+		}
+	}
+	//}
+}
+
 void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	int 		cell_i, edge_i, basis_i, tri_i, quad_i;
 	Grid*		grid	= phi->grid;
@@ -158,18 +220,12 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 			if( intPoly ) {
 				TraceRK2( dt, ADV_BACKWARD, phi->basis[from]->origin, origin );
 				basis = new Basis( phi->basis[from]->order, origin );
-				//TraceRK2( dt, ADV_BACKWARD, phi->basis[into]->origin, origin );
-				//basis = new Basis( phi->basis[into]->order, origin );
 
 				for( tri_i = 0; tri_i < intPoly->n; tri_i++ ) {
 					tri = intPoly->tris[tri_i];
 					for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
 						weight = tri->wi[quad_i]*tri->Area()/incPoly->Area();
-						tracer = 0.0;
-						for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
-							tracer += phi->basis[from]->ci[basis_i]*basis->EvalIJ( tri->qi[quad_i], basis_i );
-							//tracer += phi->basis[into]->ci[basis_i]*basis->EvalIJ( tri->qi[quad_i], basis_i );
-						}
+						tracer = basis->EvalWithCoeffs( tri->qi[quad_i], phi->basis[from]->ci );
 						for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
 							basis_in = phi->basis[into]->EvalIJ( tri->qi[quad_i], basis_i );
 							basis_out = phi->basis[from]->EvalIJ( tri->qi[quad_i], basis_i );
@@ -193,20 +249,19 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 			tri = grid->cells[cell_i]->tris[tri_i];
 			for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
 				weight = tri->wi[quad_i]*tri->Area()/grid->cells[cell_i]->Area();
-				tracer = 0.0;
-				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
-					tracer += phi->basis[cell_i]->ci[basis_i]*basis->EvalIJ( tri->qi[quad_i], basis_i );
-				}
+				tracer = basis->EvalWithCoeffs( tri->qi[quad_i], phi->basis[cell_i]->ci );
 				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
 					basis_in = basis->EvalIJ( tri->qi[quad_i], basis_i );
 					flux[cell_i][basis_i] += weight*tracer*basis_in;
 				}
 			}
 		}
-		delete basis;
 
 		/* update the cell coefficients */
 		AXEB( betaInv_ij[cell_i], flux[cell_i], phiTemp->basis[cell_i]->ci, nBasis );
+		/* apply the limiter */
+		//Limiter( phiTemp, basis, cell_i );
+		delete basis;
 	}
 
 	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {

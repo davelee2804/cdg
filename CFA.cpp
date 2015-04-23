@@ -61,6 +61,20 @@ void CFA::Advect( double dt ) {
 	delete preGrid;
 }
 
+void CFA::TraceEuler( double dt, int dir, double* xi, double* xf ) {
+	double xorig[2], vorig[2], xhalf[2], vhalf[2];
+
+	xorig[0] = xi[0];
+	xorig[1] = xi[1];
+	velx->LinearInterp( xorig, vorig + 0 );
+	vely->LinearInterp( xorig, vorig + 1 );
+
+	/* assume cfl < 1.0 */
+	xf[0] = xorig[0] + dir*dt*vorig[0];
+	xf[1] = xorig[1] + dir*dt*vorig[1];
+	CheckBounds( xf );
+}
+
 void CFA::TraceRK2( double dt, int dir, double* xi, double* xf ) {
 	double xorig[2], vorig[2], xhalf[2], vhalf[2];
 

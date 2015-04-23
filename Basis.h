@@ -9,4 +9,5 @@ class Basis {
 		double		EvalIJ( double* pt, int i );
 		double 		EvalConst( double* pt );
 		double 		EvalFull( double* pt );
+		double		EvalWithCoeffs( double* pt, double* coeffs );
 };

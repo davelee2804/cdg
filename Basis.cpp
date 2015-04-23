@@ -50,3 +50,13 @@ double Basis::EvalFull( double* pt ) {
 	}
 	return result;
 }
+
+double Basis::EvalWithCoeffs( double* pt, double* coeffs ) {
+	int 	i;
+	double	result	= 0.0;
+
+	for( i = 0; i < nFuncs; i++ ) {
+		result += coeffs[i]*EvalIJ( pt, i );
+	}
+	return result;
+}

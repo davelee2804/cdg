@@ -9,6 +9,7 @@ class CFA {
 		void 		Advect( double dt );
 		void 		CalcChars( Grid* preGrid, double dt );
 		void 		CalcFluxes( Grid* preGrid, Field* phiTemp, double dt );
+		void 		TraceEuler( double dt, int dir, double* xi, double* xf );
 		void 		TraceRK2( double dt, int dir, double* xi, double* xf );
 		double 		GetNorm( double* a, double* b, double* c );
 		void		CheckBounds( double* pt );
