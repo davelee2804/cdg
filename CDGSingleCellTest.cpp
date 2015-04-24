@@ -14,15 +14,15 @@
 
 using namespace std;
 
-#define NX 4
-#define NY 4
+#define NX 8
+#define NY 8
 
 #define QUAD_ORDER 2
 #define BASIS_ORDER 2
 
 int main() {
 	Grid*	pgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
-	Grid*	vgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, false );
+	Grid*	vgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, 2, false );
 	Field*	velx	= new Field( vgrid );
 	Field*	vely	= new Field( vgrid );
 	Field*	phi		= new Field( pgrid );
@@ -40,10 +40,13 @@ int main() {
 		phi->basis[1*NX+1]->ci[j] = 1.0;
 	}
 
+	vgrid->Write( "vgrid" );
 	pgrid->Write( "pgrid" );
+	velx->Write( "velx", 0 );
+	vely->Write( "vely", 0 );
 	phi->Write( "phi", 0 );
 
-	for( i = 1; i <= 2; i++ ) {
+	for( i = 1; i <= 12; i++ ) {
 		cout << "time step: " << i << endl;
 		cdg->Advect( dt );
 		phi->Write( "phi", i );

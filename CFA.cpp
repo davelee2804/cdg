@@ -62,7 +62,7 @@ void CFA::Advect( double dt ) {
 }
 
 void CFA::TraceEuler( double dt, int dir, double* xi, double* xf ) {
-	double xorig[2], vorig[2], xhalf[2], vhalf[2];
+	double xorig[2], vorig[2];
 
 	xorig[0] = xi[0];
 	xorig[1] = xi[1];
@@ -209,7 +209,8 @@ void CFA::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		}
 
 		for( pi = 0; pi < 6; pi++ ) {
-			incPoly = grid->cells[pinds[pi]];
+			from = pinds[pi];
+			incPoly = grid->cells[from];
 			//intPoly = prePoly->Intersection( incPoly );
 			intPoly = Intersection( prePoly, incPoly );
 			if( intPoly ) {
@@ -221,8 +222,8 @@ void CFA::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 				}
 #endif
 				weight = intPoly->Area()/incPoly->Area();
-				phiTemp->basis[into]->ci[0] += weight*phi->basis[pinds[pi]]->ci[0];
-				phiTemp->basis[pinds[pi]]->ci[0] -= weight*phi->basis[pinds[pi]]->ci[0];
+				phiTemp->basis[into]->ci[0] += weight*phi->basis[from]->ci[0];
+				phiTemp->basis[from]->ci[0] -= weight*phi->basis[from]->ci[0];
 				delete intPoly;
 			}
 		}

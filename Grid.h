@@ -13,6 +13,8 @@ class Grid {
 		bool		internal;	// true for pressure grid, false for velocity grid
 		double		dx;
 		double		dy;
+		double		dxInv;
+		double		dyInv;
 		int			nVerts;
 		int			nEdges;
 		int			nCells;

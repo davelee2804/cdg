@@ -27,6 +27,8 @@ Grid::Grid( int _nx, int _ny, double _minx, double _miny, double _maxx, double _
 
 	dx = (maxx - minx)/nx;
 	dy = (maxy - miny)/ny;
+	dxInv = 1.0/dx;
+	dyInv = 1.0/dy;
 
 	nVerts = (nx+1)*(ny+1);
 	nEdges = (nx+1)*ny + nx*(ny+1);
