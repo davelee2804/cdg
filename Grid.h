@@ -28,6 +28,8 @@ class Grid {
 		void		GetEdgeCells( int ei, Cell* cell1, Cell* Cell2 );
 		bool		GetEdgeCellInds( int ei, int* pinds );
 		void		GetCellEdgeInds( int pi, int* einds );
+		void		GetVertCellInds( int vi, int* cinds );
+		void		GetCellVertInds( int ci, int* vinds );
 		void		UpdateEdges();
 		void		UpdateCells();
 		void		Write( string fname );

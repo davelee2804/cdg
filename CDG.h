@@ -6,7 +6,7 @@ class CDG : public CFA {
 		double			phiMax;
 		double			phiMin;
 		void 			BasisProjection( int kp, int k, double* Pij );
-		void			Limiter( Field* phiTemp, Basis* basisOld, int ci );
+		void			Limiter( Field* phiTemp );
 		virtual void 	Advect( double dt );
 		virtual void 	CalcFluxes( Grid* preGrid, Field* phiTemp, double dt );
 };

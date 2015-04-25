@@ -149,8 +149,8 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	double**	flux, origin[2];
 	Basis*		basis;
 	int			nBasis	= phi->basis[0]->nFuncs;
-	//int			nBasis2	= nBasis*nBasis;
-	//double		F_kj[nBasis], F_kpi[nBasis], P_ij[nBasis2];
+	int			nBasis2	= nBasis*nBasis;
+	double		F_kj[nBasis], F_kpi[nBasis], P_ij[nBasis2];
 
 	flux = new double*[grid->nCells];
 	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
@@ -175,10 +175,10 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 				TraceRK2( dt, ADV_BACKWARD, phi->basis[from]->origin, origin );
 				basis = new Basis( phi->basis[from]->order, origin );
 
-				/*for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
+				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
 					F_kj[basis_i] = 0.0;
 					F_kpi[basis_i] = 0.0;
-				}*/
+				}
 
 				for( tri_i = 0; tri_i < intPoly->n; tri_i++ ) {
 					tri = intPoly->tris[tri_i];
@@ -188,22 +188,22 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 						for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
 							basis_into = phi->basis[into]->EvalIJ( tri->qi[quad_i], basis_i );
 							basis_from = phi->basis[from]->EvalIJ( tri->qi[quad_i], basis_i );
-							flux[into][basis_i] += weight*tracer*basis_into;
-							flux[from][basis_i] -= weight*tracer*basis_from;
+							//flux[into][basis_i] += weight*tracer*basis_into;
+							//flux[from][basis_i] -= weight*tracer*basis_from;
 
-							//F_kj[basis_i] -= weight*tracer*basis_from;
+							F_kj[basis_i] -= weight*tracer*basis_from;
 						}
 					}
 				}
 				delete intPoly;
 				delete basis;
 
-				/*BasisProjection( into, from, P_ij );
+				BasisProjection( into, from, P_ij );
 				AXEB( P_ij, F_kj, F_kpi, nBasis );
 				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
 					flux[into][basis_i] -= F_kpi[basis_i];
 					flux[from][basis_i] += F_kj[basis_i];
-				}*/
+				}
 			}
         }
         delete prePoly;
@@ -228,14 +228,91 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		/* update the cell coefficients */
 		AXEB( betaInv_ij[cell_i], flux[cell_i], phiTemp->basis[cell_i]->ci, nBasis );
 		/* apply the limiter */
-		//Limiter( phiTemp, basis, cell_i );
 		delete basis;
 	}
+
+	Limiter( phiTemp );
 
 	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
 		delete[] flux[cell_i];
 	}
 	delete[] flux;
+}
+
+void CDG::Limiter( Field* phiTemp ) {
+	Grid*	grid	= phi->grid;
+	Cell*	cell;
+	Basis*	basis;
+	Basis*	basis2	= new Basis( 2, phiTemp->basis[0]->origin );
+	int 	cell_i, vert_i, cell_j, adjCell_i, basis_j;
+	int		nx, ny;
+	int		vinds[4], cinds[4], adjCells[3];
+	double	atVerts[4], min, max;
+	bool	limit;
+	double	Aij[16], cj[4], AijInv[16];
+
+	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
+		cell = grid->cells[cell_i];
+		basis = phiTemp->basis[cell_i];
+		limit = false;
+		nx = cell_i%grid->nx;
+		ny = cell_i/grid->nx;
+
+		if( nx > 0 && nx < grid->nx - 1 && ny > 0 && ny < grid->ny - 1 ) {
+			grid->GetCellVertInds( cell_i, vinds );
+			for( vert_i = 0; vert_i < cell->n; vert_i++ ) {
+				atVerts[vert_i] = basis->EvalFull( cell->verts[vert_i] );
+				grid->GetVertCellInds( vinds[vert_i], cinds );
+				adjCell_i = 0;
+				for( cell_j = 0; cell_j < 4; cell_j++ ) {
+					if( cinds[cell_j] == cell_i ) {
+						continue;
+					}
+					adjCells[adjCell_i++] = cinds[cell_j];
+				}
+
+				min = max = atVerts[vert_i];
+				for( adjCell_i = 0; adjCell_i < 3; adjCell_i++ ) {
+					if( phiTemp->basis[adjCells[adjCell_i]]->ci[0] < min ) {
+						min = phiTemp->basis[adjCells[adjCell_i]]->ci[0];
+					}
+					else if( phiTemp->basis[adjCells[adjCell_i]]->ci[0] > max ) {
+						max = phiTemp->basis[adjCells[adjCell_i]]->ci[0];
+					}
+				}
+				if( max > atVerts[vert_i] + 1.0e-8 ) {
+					atVerts[vert_i] = max;
+					atVerts[(vert_i+2)%4] = basis->ci[0] - (max - basis->ci[0]);
+					limit = true;
+				}
+				else if( min < atVerts[vert_i] - 1.0e-8 ) {
+					atVerts[vert_i] = min;
+					atVerts[(vert_i+2)%4] = basis->ci[0] + (basis->ci[0] - min);
+					limit = true;
+				}
+			}
+
+			if( !limit ) {
+				continue;
+			}
+
+			for( vert_i = 0; vert_i < 4; vert_i++ ) {
+				for( basis_j = 0; basis_j < 4; basis_j++ ) {
+					Aij[vert_i*4+basis_j] = basis2->EvalIJ( grid->verts[vinds[vert_i]], basis_j );
+				}
+			}
+			MatInv( Aij, AijInv, 4 );
+			AXEB( AijInv, atVerts, cj, 4 );
+			for( basis_j = 1; basis_j < basis->nFuncs; basis_j++ ) {
+				basis->ci[basis_j] = 0.0;
+			}
+			basis->ci[1] = cj[1];
+			basis->ci[basis->order] = cj[2];
+			basis->ci[basis->order+1] = cj[3];
+		}
+	}
+
+	delete basis2;
 }
 
 double MinMod( double a, double b, double c ) {

@@ -263,6 +263,28 @@ void Grid::GetCellEdgeInds( int pi, int* einds ) {
 	einds[3] = (yj+0)*(nx+0)+(xi+0) + shift;
 }
 
+/* no chech for bounndary vertices yet */
+void Grid::GetVertCellInds( int vi, int* cinds ) {
+	int xi = vi%(nx+1);
+	int yj = vi/(nx+1);
+
+	cinds[0] = (yj-1)*nx + (xi-1);
+	cinds[1] = (yj-1)*nx + (xi+0);
+	cinds[2] = (yj+0)*nx + (xi-1);
+	cinds[3] = (yj+0)*nx + (xi+0);
+}
+
+/* return in clockwise orientation */
+void Grid::GetCellVertInds( int ci, int* vinds ) {
+	int xi = ci%nx;
+	int yj = ci/nx;
+
+	vinds[0] = (yj+0)*(nx+1) + (xi+0);
+	vinds[1] = (yj+1)*(nx+1) + (xi+0);
+	vinds[2] = (yj+1)*(nx+1) + (xi+1);
+	vinds[3] = (yj+0)*(nx+1) + (xi+1);
+}
+
 void Grid::UpdateEdges() {
 	int i, j, ei = 0;
 
