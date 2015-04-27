@@ -1,6 +1,6 @@
 class Grid {
 	public:
-		Grid( int _nx, int _ny, double _minx, double _min_y, double _maxx, double _maxy, int _quadOrder, int _basisOrder, bool _internal );
+		Grid( int _nx, int _ny, double _minx, double _miny, double _maxx, double _maxy, int _quadOrder, int _basisOrder, bool _internal );
 		~Grid();
 		int			nx;
 		int			ny;
