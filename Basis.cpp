@@ -1,10 +1,6 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "Edge.h"
-#include "Triangle.h"
-#include "Polygon.h"
-#include "Cell.h"
 #include "Basis.h"
 
 Basis::Basis( int _order, double* _origin ) {

@@ -30,7 +30,9 @@ void MatInv( double* A, double* Ainv, int n ) {
 							icol = k;
 						}
 					}
-					else if( ipiv[k] > 1 ) { cerr << "Matrix inverse error! - singular matrix (1)\n"; }
+					else if( ipiv[k] > 1 ) { 
+						cerr << "Matrix inverse error! - singular matrix (1)\n"; 
+					}
 				}
 			}
 		}
@@ -42,7 +44,9 @@ void MatInv( double* A, double* Ainv, int n ) {
 		}
 		indxr[i] = irow;
 		indxc[i] = icol;
-		if( fabs(Ainv[I(icol,icol,n)]) < 1.0e-12 ) { cerr << "Matrix inverse error! - singular matrix (2)\n"; }
+		if( fabs(Ainv[I(icol,icol,n)]) < 1.0e-12 ) { 
+			cerr << "Matrix inverse error! - singular matrix (2)\n"; 
+		}
 		pivinv = 1.0/Ainv[I(icol,icol,n)];
 		Ainv[I(icol,icol,n)] = 1.0;
 		for( l = 0; l < n; l++ ) { Ainv[I(icol,l,n)] *= pivinv; }

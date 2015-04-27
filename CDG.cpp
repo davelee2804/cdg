@@ -243,22 +243,90 @@ void CDG::Limiter( Field* phiTemp ) {
 	Grid*	grid	= phi->grid;
 	Cell*	cell;
 	Basis*	basis;
-	Basis*	basis2	= new Basis( 2, phiTemp->basis[0]->origin );
-	int 	cell_i, vert_i, cell_j, adjCell_i, basis_j;
 	int		nx, ny;
-	int		vinds[4], cinds[4], adjCells[3];
-	double	atVerts[4], min, max;
-	bool	limit;
-	double	Aij[16], cj[4], AijInv[16];
+	int		vinds[4];
+	int		cell_i, vert_i, ci, cj, basis_i;
+	double	maxPhiAtVert, minPhiAtVert, phiAtVert, maxPhiInCell, minPhiInCell, phiInCell;
+	double	alpha, gamma, dxTmp, dyTmp;
 
 	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
 		cell = grid->cells[cell_i];
 		basis = phiTemp->basis[cell_i];
-		limit = false;
 		nx = cell_i%grid->nx;
 		ny = cell_i/grid->nx;
 
 		if( nx > 0 && nx < grid->nx - 1 && ny > 0 && ny < grid->ny - 1 ) {
+			grid->GetCellVertInds( cell_i, vinds );
+			maxPhiAtVert = maxPhiInCell = -1.0e+99;
+			minPhiAtVert = minPhiInCell = +1.0e+99;
+			for( vert_i = 0; vert_i < cell->n; vert_i++ ) {
+				phiAtVert = basis->EvalFull( cell->verts[vert_i] ) - basis->ci[0];
+				minPhiAtVert = ( phiAtVert < minPhiAtVert ) ? phiAtVert : minPhiAtVert;
+				maxPhiAtVert = ( phiAtVert > maxPhiAtVert ) ? phiAtVert : maxPhiAtVert;
+			}
+			for( cj = ny - 1; cj < ny + 2; cj++ ) {
+				for( ci = nx - 1; ci < nx + 2; ci++ ) {
+					if( ci == nx && cj == ny ) {
+						continue;
+					}
+					phiInCell = phiTemp->basis[cj*grid->nx+ci]->ci[0] - basis->ci[0];
+					minPhiInCell = ( phiInCell < minPhiInCell ) ? phiInCell : minPhiInCell;
+					maxPhiInCell = ( phiInCell > maxPhiInCell ) ? phiInCell : maxPhiInCell;
+				}
+			}
+
+			alpha = 1.0;
+			if( fabs( minPhiAtVert ) > 1.0e-6 ) {
+				alpha = minPhiInCell/minPhiAtVert > 0.0 ? minPhiInCell/minPhiAtVert : 0.0;
+			}
+
+			gamma = 1.0;
+			if( fabs( maxPhiAtVert ) > 1.0e-6 ) {
+				gamma = maxPhiInCell/maxPhiAtVert > 0.0 ? maxPhiInCell/maxPhiAtVert : 0.0;
+			}
+
+			alpha = ( alpha < gamma ) ? alpha : gamma;
+			alpha = ( alpha < 1.0 )   ? alpha : 1.0;
+
+			if( alpha > 1.0 - 1.0e-4 ) {
+				continue;
+			}
+
+			dxTmp = basis->ci[1];
+			dyTmp = basis->ci[basis->order];
+
+			for( basis_i = 1; basis_i < basis->nFuncs; basis_i++ ) {
+				basis->ci[basis_i] = 0.0;
+			}
+			basis->ci[1] = alpha*dxTmp;
+			basis->ci[basis->order] = alpha*dyTmp;
+		}
+	}
+}
+
+#if 0
+void CDG::Limiter( Field* phiTemp ) {
+	Grid*	grid	= phi->grid;
+	Cell*	cell;
+	Basis*	basis;
+	int 	cell_i, vert_i, cell_j, adjCell_i, basis_j;
+	int		nx, ny;
+	int		vinds[4], cinds[4], adjCells[3], maxInds[2];
+	double	atVerts[4], atVerts2[2];
+	bool	minLimit, maxLimit;
+	double	Aij[4], cj[2], AijInv[4];
+	double	incVal[4][3], min, max, avg;
+
+	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
+		cell = grid->cells[cell_i];
+		basis = phiTemp->basis[cell_i];
+		avg = basis->ci[0];
+		minLimit = maxLimit = false;
+		nx = cell_i%grid->nx;
+		ny = cell_i/grid->nx;
+
+		if( nx > 0 && nx < grid->nx - 1 && ny > 0 && ny < grid->ny - 1 ) {
+			/* for each vertex of the cell get the adjacent cell mean values */
 			grid->GetCellVertInds( cell_i, vinds );
 			for( vert_i = 0; vert_i < cell->n; vert_i++ ) {
 				atVerts[vert_i] = basis->EvalFull( cell->verts[vert_i] );
@@ -271,51 +339,68 @@ void CDG::Limiter( Field* phiTemp ) {
 					adjCells[adjCell_i++] = cinds[cell_j];
 				}
 
-				min = max = atVerts[vert_i];
 				for( adjCell_i = 0; adjCell_i < 3; adjCell_i++ ) {
-					if( phiTemp->basis[adjCells[adjCell_i]]->ci[0] < min ) {
-						min = phiTemp->basis[adjCells[adjCell_i]]->ci[0];
-					}
-					else if( phiTemp->basis[adjCells[adjCell_i]]->ci[0] > max ) {
-						max = phiTemp->basis[adjCells[adjCell_i]]->ci[0];
-					}
-				}
-				if( max > atVerts[vert_i] + 1.0e-8 ) {
-					atVerts[vert_i] = max;
-					atVerts[(vert_i+2)%4] = basis->ci[0] - (max - basis->ci[0]);
-					limit = true;
-				}
-				else if( min < atVerts[vert_i] - 1.0e-8 ) {
-					atVerts[vert_i] = min;
-					atVerts[(vert_i+2)%4] = basis->ci[0] + (basis->ci[0] - min);
-					limit = true;
+					incVal[vert_i][adjCell_i] = phiTemp->basis[adjCells[adjCell_i]]->ci[0];
 				}
 			}
 
-			if( !limit ) {
+			/* find the highest minimum and lowest maximum  mean cell values exceeded at the vertices */
+			min = -1.0e+99;
+			max = +1.0e+99;
+			for( vert_i = 0; vert_i < cell->n; vert_i++ ) {
+				for( adjCell_i = 0; adjCell_i < 3; adjCell_i++ ) {
+					/* highest minimum */
+					if( atVerts[vert_i] < avg && atVerts[vert_i] < incVal[vert_i][adjCell_i] ) {
+						minLimit = true;
+						if( incVal[vert_i][adjCell_i] > min ) {
+							min = incVal[vert_i][adjCell_i];
+							maxInds[0] = vert_i;
+						}
+					}
+					/* lowest maximum */
+					else if( atVerts[vert_i] > avg && atVerts[vert_i] > incVal[vert_i][adjCell_i] ) {
+						maxLimit = true;
+						if( incVal[vert_i][adjCell_i] < max ) {
+							max = incVal[vert_i][adjCell_i];
+							maxInds[1] = vert_i;
+						}
+					}
+				}
+			}
+
+			if( !minLimit && !maxLimit ) {
 				continue;
 			}
 
-			for( vert_i = 0; vert_i < 4; vert_i++ ) {
-				for( basis_j = 0; basis_j < 4; basis_j++ ) {
-					Aij[vert_i*4+basis_j] = basis2->EvalIJ( grid->verts[vinds[vert_i]], basis_j );
+			if( !minLimit ) {
+				maxInds[0] = (maxInds[1]+2)%4;
+				min = atVerts[maxInds[0]];
+			}
+			else if( !maxLimit ) {
+				maxInds[1] = (maxInds[0]+2)%4;
+				max = atVerts[maxInds[1]];
+			}
+
+			atVerts2[0] = min;
+			atVerts2[1] = max;
+			for( vert_i = 0; vert_i < 2; vert_i++ ) {
+				for( basis_j = 0; basis_j < 2; basis_j++ ) {
+					Aij[vert_i*2+basis_j] = basis->EvalIJ( cell->verts[maxInds[vert_i]], basis_j + 1 );
 				}
 			}
-			MatInv( Aij, AijInv, 4 );
-			AXEB( AijInv, atVerts, cj, 4 );
+			MatInv( Aij, AijInv, 2 );
+			AXEB( AijInv, atVerts2, cj, 2 );
 			for( basis_j = 1; basis_j < basis->nFuncs; basis_j++ ) {
 				basis->ci[basis_j] = 0.0;
 			}
 			basis->ci[1] = cj[1];
 			basis->ci[basis->order] = cj[2];
-			basis->ci[basis->order+1] = cj[3];
 		}
 	}
-
-	delete basis2;
 }
+#endif
 
-double MinMod( double a, double b, double c ) {
+/*double MinMod( double a, double b, double c ) {
 	double ans;
 
 	if( a*b < 0.0 || b*c < 0.0 || c*a < 0.0 ) {
@@ -324,7 +409,7 @@ double MinMod( double a, double b, double c ) {
 	ans = ( fabs(a) < fabs(b) ) ? a : b;
 	ans = ( ans < fabs(c) ) ? ans : c;
 	return ans;
-}
+}*/
 
 /* only good for regular grids, reduces solution to second order accuracy
    reference:
