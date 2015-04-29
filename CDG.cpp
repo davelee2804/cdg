@@ -27,6 +27,7 @@ CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) 
 	double		fj[nBasis];
 	double		weight, *coord;
 	double		beta_ij[nBasis*nBasis];
+	double		volErr;
 
 	phiMax = -1.0e+10;
 	phiMin = +1.0e+10;
@@ -79,6 +80,10 @@ CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) 
 		}
 		/* set the initial basis coefficients */
 		AXEB( betaInv_ij[pi], fj, basis->ci, nBasis );
+
+		if( !basis->TestMean( &volErr ) ) {
+			cout << "ERROR: basis function mean not equal to first component..." << volErr << endl;
+		}
 	}
 }
 

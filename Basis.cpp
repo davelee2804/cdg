@@ -40,12 +40,6 @@ double Basis::EvalIJ( double* pt, int i ) {
 	if( i == 0 ) {
 		return 1.0;
 	}
-	if( i == 1 ) {
-		return dxInv*( pt[0] - origin[0] );
-	}
-	if( i == order ) {
-		return dyInv*( pt[1] - origin[1] );
-	}
 
 	for( j = 1; j < i%order; j++ ) {
 		fac1 *= j;
@@ -67,7 +61,8 @@ double Basis::EvalIJ( double* pt, int i ) {
 	}
 	b *= aInv;
 
-	return a*( pow( pt[0] - origin[0], i%order )*pow( pt[1] - origin[1], i/order ) - b );
+	//return a*( pow( pt[0] - origin[0], i%order )*pow( pt[1] - origin[1], i/order ) - b );
+	return pow( pt[0] - origin[0], i%order )*pow( pt[1] - origin[1], i/order );
 }
 
 double Basis::EvalConst( double* pt ) {
@@ -98,4 +93,27 @@ double Basis::EvalWithCoeffs( double* pt, double* coeffs ) {
 		result += coeffs[i]*EvalIJ( pt, i );
 	}
 	return result;
+}
+
+bool Basis::TestMean( double* volErr ) {
+	int 		i, j, k;
+	double		weight;
+	Triangle*	tri;
+	bool		ok;
+
+	*volErr = 0.0;
+
+	for( j = 0; j < poly->n; j++ ) {
+		tri = poly->tris[j];
+		for( k = 0; k < tri->nQuadPts; k++ ) {
+			weight = tri->wi[k]*tri->Area()/poly->Area();
+			for( i = 1; i < nFuncs; i++ ) {
+				*volErr += weight*ci[i]*EvalIJ( tri->qi[k], i );
+			}
+		}
+	}
+
+	ok = fabs( *volErr ) > 1.0e-12 ? false : true;
+
+	return ok;
 }

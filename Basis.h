@@ -14,4 +14,5 @@ class Basis {
 		double 		EvalConst( double* pt );
 		double 		EvalFull( double* pt );
 		double		EvalWithCoeffs( double* pt, double* coeffs );
+		bool		TestMean( double* volErr );
 };
