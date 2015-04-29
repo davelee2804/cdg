@@ -51,7 +51,7 @@ double Basis::EvalIJ( double* pt, int i ) {
 		fac1 *= j;
 	}
 	for( k = 1; k < i/order; k++ ) {
-		fac1 *= k;
+		fac2 *= k;
 	}
 
 	/* normalise coefficients to improve condition number of the matrix */
