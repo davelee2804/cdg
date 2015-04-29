@@ -32,5 +32,6 @@ class Grid {
 		void		GetCellVertInds( int ci, int* vinds );
 		void		UpdateEdges();
 		void		UpdateCells();
+		void		UpdateTriangles();
 		void		Write( string fname );
 };

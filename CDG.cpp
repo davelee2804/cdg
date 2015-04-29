@@ -99,6 +99,7 @@ void CDG::Advect( double dt ) {
 	CalcChars( preGrid, dt );
 	preGrid->UpdateEdges();
 	preGrid->UpdateCells();
+	preGrid->UpdateTriangles();
 	CalcFluxes( preGrid, phiTemp, dt );
 	phi->Copy( phiTemp );
 
@@ -173,7 +174,7 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 
 			if( intPoly ) {
 				TraceRK2( dt, ADV_BACKWARD, phi->basis[from]->origin, origin );
-				basis = new Basis( phi->basis[from]->order, origin );
+				basis = new Basis( preGrid->cells[from], phi->basis[from]->order, origin, grid->dx, grid->dy );
 
 				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
 					F_kj[basis_i] = 0.0;
@@ -212,7 +213,7 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	/* add rhs contributions from previous cell */
 	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
 		TraceRK2( dt, ADV_BACKWARD, phi->basis[cell_i]->origin, origin );
-		basis = new Basis( phi->basis[cell_i]->order, origin );
+		basis = new Basis( preGrid->cells[cell_i], phi->basis[cell_i]->order, origin, grid->dx, grid->dy );
 		for( tri_i = 0; tri_i < grid->cells[cell_i]->n; tri_i++ ) {
 			tri = grid->cells[cell_i]->tris[tri_i];
 			for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
@@ -397,97 +398,6 @@ void CDG::Limiter( Field* phiTemp ) {
 			basis->ci[basis->order] = cj[2];
 		}
 	}
-}
-#endif
-
-/*double MinMod( double a, double b, double c ) {
-	double ans;
-
-	if( a*b < 0.0 || b*c < 0.0 || c*a < 0.0 ) {
-		return 0.0;
-	}
-	ans = ( fabs(a) < fabs(b) ) ? a : b;
-	ans = ( ans < fabs(c) ) ? ans : c;
-	return ans;
-}*/
-
-/* only good for regular grids, reduces solution to second order accuracy
-   reference:
-		Biswas Et. Al. (1994) Applied Numerical Mathematics, 14. 255-283 */
-/*
-void CDG::Limiter( Field* phiTemp, Basis* basisOld, int ci ) {
-	Grid*	grid		= phi->grid;
-	Cell*	cell		= grid->cells[ci];
-	Basis* 	basis 		= phiTemp->basis[ci];
-	int		nx			= ci%grid->nx;
-	int		ny			= ci/grid->nx;
-	int		left		= ( nx >            0 ) ? (ny+0)*nx + (nx-1) : -1;
-	int		right		= ( nx < grid->nx - 1 ) ? (ny+0)*nx + (nx+1) : -1;
-	int		bottom		= ( ny >            0 ) ? (ny-1)*nx + (nx+0) : -1;
-	int		top 		= ( ny < grid->ny - 1 ) ? (ny+1)*nx + (nx+0) : -1;
-	double	xm			= cell->verts[0][0];
-	double	xp			= cell->verts[2][0];
-	double	ym			= cell->verts[0][1];
-	double	yp			= cell->verts[2][1];
-	double	leftPt[2]	= { xm, 0.5*( ym + yp ) };
-	double	rightPt[2]	= { xp, 0.5*( ym + yp ) };
-	double	bottomPt[2]	= { 0.5*( xm + xp ), ym };
-	double	topPt[2]	= { 0.5*( xm + xp ), yp };
-	double	dcxm		= ( left   > -1 ) ? grid->dxInv*( basis->ci[0]   - phiTemp->basis[left]->ci[0] ) : 1.0e+99;
-	double 	dcxp		= ( right  > -1 ) ? grid->dxInv*( phiTemp->basis[right]->ci[0]  - basis->ci[0] ) : 1.0e+99;
-	double 	dcym		= ( bottom > -1 ) ? grid->dyInv*( basis->ci[0] - phiTemp->basis[bottom]->ci[0] ) : 1.0e+99;
-	double 	dcyp;		= ( top    > -1 ) ? grid->dyInv*( phiTemp->basis[top]->ci[0]    - basis->ci[0] ) : 1.0e+99;
-	double	dcx, dcy;
-
-	if( left == 0 ) {
-		dx = MinMod(  );
-	}
-
-	Sxm = ( left   >           -1 ) ? MinMod( Sxm, dxcm, dxcp ) : MinMod( Sxm, dxcp, dxcp );
-	Sxp = ( right  > grid->nx - 1 ) ? MinMod( Sxp, dxcm, dxcp ) : MinMod( Sxp, dxcm, dxcm );
-	Sym = ( bottom >           -1 ) ? MinMod( Sym, dycm, dycp ) : MinMod( Sym, dycp, dxcp );
-	Syp = ( top    > grid->ny - 1 ) ? MinMod( Syp, dycm, dycp ) : MinMod( Syp, dycm, dxcm );
-
-	
-}
-*/
-
-#if 0
-void CDG::Limiter( Field* phiTemp, Basis* basisOld, int ci ) {
-	Cell* 		cell	= phi->grid->cells[ci];
-	Basis* 		basis	= phiTemp->basis[ci];
-	Triangle*	tri;
-	int			tri_i, quad_i, basis_i;
-	double		weight, avg = 0.0, tracer, alpha = 1.0, gamma;
-
-	for( tri_i = 0; tri_i < cell->n; tri_i++ ) {
-		tri = cell->tris[tri_i];
-		for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
-			weight = tri->wi[quad_i]*tri->Area()/cell->Area();
-			//tracer = basis->EvalFull( tri->qi[quad_i] );
-			tracer = basisOld->EvalWithCoeffs( tri->qi[quad_i], basis->ci );
-			avg += weight*tracer;
-		}
-	}
-
-	//if( ( avg - basis->ci[0] )*( avg - basis->ci[0] ) > 1.0e-20 ) {
-	if( avg > phiMax ) {
-		gamma = (phiMax - basis->ci[0])/(avg - basis->ci[0]);
-		alpha = ( alpha < gamma ) ? alpha : gamma;
-		alpha = ( alpha > 0.0 ) ? alpha : 0.0;
-		for( basis_i = 1; basis_i < basis->nFuncs; basis_i++ ) {
-			basis->ci[basis_i] *= alpha;
-		}
-	}
-	if( avg < phiMin ) {
-		gamma = (phiMin - basis->ci[0])/(avg - basis->ci[0]);
-		alpha = ( alpha < gamma ) ? alpha : gamma;
-		alpha = ( alpha > 0.0 ) ? alpha : 0.0;
-		for( basis_i = 1; basis_i < basis->nFuncs; basis_i++ ) {
-			basis->ci[basis_i] *= alpha;
-		}
-	}
-	//}
 }
 #endif
 

@@ -63,7 +63,7 @@ CFA.o: CFA.cpp CFA.h Field.o Basis.o Grid.o Cell.o Polygon.o Basis.o Triangle.o 
 	${CC} -I ./core/ -c CFA.cpp ${FLAGS}
 Field.o: Field.cpp Field.h Basis.o Grid.o Cell.o Polygon.o Basis.o Triangle.o Edge.o
 	${CC} -c Field.cpp ${FLAGS}
-Basis.o: Basis.cpp Basis.h
+Basis.o: Basis.cpp Basis.h Polygon.o Triangle.o Edge.o
 	${CC} -c Basis.cpp ${FLAGS}
 Grid.o: Grid.cpp Grid.h Cell.o Polygon.o Triangle.o Edge.o
 	${CC} -c Grid.cpp ${FLAGS}

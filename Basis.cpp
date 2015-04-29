@@ -1,10 +1,15 @@
 #include <cmath>
 #include <cstdlib>
 
+#include "Edge.h"
+#include "Triangle.h"
+#include "Polygon.h"
 #include "Basis.h"
 
-Basis::Basis( int _order, double* _origin ) {
+Basis::Basis( Polygon* _poly, int _order, double* _origin, double _dx, double _dy ) {
 	int i;
+
+	poly = _poly;
 
 	order = _order;
 
@@ -12,6 +17,10 @@ Basis::Basis( int _order, double* _origin ) {
 	origin[1] = _origin[1];
 
 	nFuncs = order*order;
+
+	dxInv = 1.0/_dx;
+	dyInv = 1.0/_dy;
+	aInv = 1.0/poly->Area();
 
 	ci = new double[nFuncs];
 	for( i = 0; i < nFuncs; i++ ) {
@@ -24,6 +33,31 @@ Basis::~Basis() {
 }
 
 double Basis::EvalIJ( double* pt, int i ) {
+	int			j, k;
+	double 		fac1 = 1.0, fac2 = 1.0, a, b = 0.0, weight;
+	Triangle*	tri;
+
+	for( j = 1; j < i%order; j++ ) {
+		fac1 *= j;
+	}
+	for( k = 1; k < i/order; k++ ) {
+		fac1 *= k;
+	}
+
+	/* normalise coefficients to improve condition number of the matrix */
+	a = pow( dxInv, i%order )*pow( dyInv, i/order )/fac1/fac2;
+
+	/* remove mean component so higher order basis functions are massless */
+	for( j = 0; j < poly->n; j++ ) {
+		for( k = 0; k < poly->tris[j]->nQuadPts; k++ ) {
+			tri = poly->tris[j];
+			weight = tri->wi[k]*tri->Area();
+			b += weight*pow( tri->qi[k][0] - origin[0], i%order )*pow( tri->qi[k][1] - origin[1], i/order );
+		}
+	}
+	b *= aInv;
+
+	//return a*( pow( pt[0] - origin[0], i%order )*pow( pt[1] - origin[1], i/order ) - b );
 	return pow( pt[0] - origin[0], i%order )*pow( pt[1] - origin[1], i/order );
 }
 

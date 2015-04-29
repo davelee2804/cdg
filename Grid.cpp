@@ -322,7 +322,27 @@ void Grid::UpdateCells() {
 			cells[pi]->verts[2][1] = verts[(j+1)*(nx+1)+(i+1)][1];
 			cells[pi]->verts[3][0] = verts[(j+0)*(nx+1)+(i+1)][0];
 			cells[pi]->verts[3][1] = verts[(j+0)*(nx+1)+(i+1)][1];
+			cells[pi]->GenOrigin();
 			pi++;
+		}
+	}
+}
+
+void Grid::UpdateTriangles() {
+	int 		i, j;
+	Cell* 		cell;
+	Triangle*	tri;
+
+	for( i = 0; i < nCells; i++ ) {
+		cell = cells[i];
+		for( j = 0; j < cell->n; j++ ) {
+			tri = cell->tris[j];
+			tri->a[0] = cell->verts[j][0];
+			tri->a[1] = cell->verts[j][1];
+			tri->b[0] = cell->verts[(j+1)%cell->n][0];
+			tri->b[1] = cell->verts[(j+1)%cell->n][1];
+			tri->c[0] = cell->origin[0];
+			tri->c[1] = cell->origin[1];
 		}
 	}
 }

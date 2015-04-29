@@ -9,6 +9,7 @@ class Polygon {
 		Triangle** 	tris;
 		Polygon* 	Intersection( Polygon* poly );
 		bool 		IsInside( double* pt );
+		void		GenOrigin();
 		double 		Area();
 		void 		Print();
 

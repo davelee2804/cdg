@@ -13,17 +13,13 @@ Polygon::Polygon( double** _verts, int _n, int quadOrder ) {
 	edges = new Edge*[n];
 	tris = new Triangle*[n];
 
-	origin[0] = 0.0;
-	origin[1] = 0.0;
 	for( i = 0; i < n; i++ ) {
 		verts[i] = new double[2];
 		verts[i][0] = _verts[i][0];
 		verts[i][1] = _verts[i][1];
-		origin[0] += verts[i][0];
-		origin[1] += verts[i][1];
 	}
-	origin[0] /= n;
-	origin[1] /= n;
+
+	GenOrigin();
 
 	for( i = 0; i < n; i++ ) {
 		edges[i] = new Edge( verts[i], verts[(i+1)%n] );
@@ -197,6 +193,19 @@ bool Polygon::IsInside( double* pt ) {
 	}
 
 	return true;
+}
+
+void Polygon::GenOrigin() {
+	int i;
+
+	origin[0] = origin[1] = 0.0;
+
+	for( i = 0; i < n; i++ ) {
+		origin[0] += verts[i][0];
+		origin[1] += verts[i][1];
+	}
+	origin[0] /= n;
+	origin[1] /= n;
 }
 
 double Polygon::Area() {

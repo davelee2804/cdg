@@ -50,6 +50,7 @@ void CFA::Advect( double dt ) {
 	CalcChars( preGrid, dt );
 	preGrid->UpdateEdges();
 	preGrid->UpdateCells();
+	preGrid->UpdateTriangles();
 	CalcFluxes( preGrid, phiTemp, dt );
 	for( i = 0; i < grid->nCells; i++ ) {
 		for( j = 0; j < grid->cells[0]->nc; j++ ) {
