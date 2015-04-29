@@ -37,6 +37,16 @@ double Basis::EvalIJ( double* pt, int i ) {
 	double 		fac1 = 1.0, fac2 = 1.0, a, b = 0.0, weight;
 	Triangle*	tri;
 
+	if( i == 0 ) {
+		return 1.0;
+	}
+	if( i == 1 ) {
+		return dxInv*( pt[0] - origin[0] );
+	}
+	if( i == order ) {
+		return dyInv*( pt[1] - origin[1] );
+	}
+
 	for( j = 1; j < i%order; j++ ) {
 		fac1 *= j;
 	}
@@ -57,8 +67,7 @@ double Basis::EvalIJ( double* pt, int i ) {
 	}
 	b *= aInv;
 
-	//return a*( pow( pt[0] - origin[0], i%order )*pow( pt[1] - origin[1], i/order ) - b );
-	return pow( pt[0] - origin[0], i%order )*pow( pt[1] - origin[1], i/order );
+	return a*( pow( pt[0] - origin[0], i%order )*pow( pt[1] - origin[1], i/order ) - b );
 }
 
 double Basis::EvalConst( double* pt ) {
