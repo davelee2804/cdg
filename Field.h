@@ -4,6 +4,7 @@ class Field {
 		~Field();
 		Grid* 		grid;
 		Basis**		basis;	// values are generated as an expansion of the basis
+		double		EvalAtCoord( double* x );
 		void 		LinearInterp( double* x, double* v );
 		double		IntegrateConstant(); // assumes constant cell wise values
 		double		Integrate();

@@ -33,6 +33,12 @@ Field::~Field() {
 	delete[] basis;
 }
 
+double Field::EvalAtCoord( double* x ) {
+	int pi = grid->GetCellIndex( x );
+
+	return basis[pi]->EvalFull( x ); 
+}
+
 void Field::LinearInterp( double* x, double* v ) {
 	int 	xi = (x[0] - grid->minx)/grid->dx;
 	int 	yj = (x[1] - grid->miny)/grid->dy;
