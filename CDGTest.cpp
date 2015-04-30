@@ -15,8 +15,8 @@
 
 using namespace std;
 
-#define NX 32
-#define NY 32
+#define NX 64
+#define NY 64
 
 #define QUAD_ORDER 2
 #define BASIS_ORDER 2
@@ -61,7 +61,7 @@ int main() {
 	Field*		ans		= new Field( pgrid );
 	double		err		= 0.0;
 	double		norm	= 0.0;
-	double		val;
+	double		val_n, val_a;
 
 	for( i = 0; i < vgrid->nCells; i++ ) {
 		for( j = 0; j < BASIS_ORDER*BASIS_ORDER; j++ ) {
@@ -103,13 +103,14 @@ int main() {
 		}
 
 		for( j = 0; j < BASIS_ORDER*BASIS_ORDER; j++ ) {
-			val = phi->basis[i]->EvalFull( pgrid->cells[i]->coords[j] );
-			err += fabs(val - ans->basis[i]->ci[j]);
+			val_n = phi->basis[i]->EvalFull( pgrid->cells[i]->coords[j] );
+			val_a = ans->basis[i]->EvalFull( pgrid->cells[i]->coords[j] );
+			err += fabs(val_a - val_n);
 			norm += ans->basis[i]->ci[j];
 		}
 	}
-	cout << "error: " << err/norm << endl;
-	cout << "mass loss:     " << 1.0 - phi->IntegrateConstant()/ans->IntegrateConstant() << endl;
+	cout << "error:      " << err/norm << endl;
+	cout << "mass loss:  " << 1.0 - phi->IntegrateConstant()/ans->IntegrateConstant() << endl;
 
 	delete cdg;
 	delete phi;

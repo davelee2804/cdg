@@ -47,7 +47,7 @@ plt.colorbar()
 plt.savefig( 'ans' + '.' + '%.4u'%0 + '.png' )
 plt.figure()
 
-for i in np.arange( 0,tstep+tskip,tskip ):
+for i in np.arange( 0,tstep,tskip ):
 	print 'time step: ', i
 	phi = np.loadtxt( 'phi.' + '%.4u'%i + '.txt' )
 	plt.contourf( Xp, Yp, phi.reshape( ( len(yp), len(xp) ) ), 100 )
@@ -56,3 +56,11 @@ for i in np.arange( 0,tstep+tskip,tskip ):
 	plt.quiver( Xu[::8], Yu[::8], U[::8], V[::8] )
 	plt.savefig( 'phi.' + '%.4u'%i + '.png' )
 	plt.figure()
+
+phi = np.loadtxt( 'phi.' + '%.4u'%tstep + '.txt' )
+plt.contourf( Xp, Yp, phi.reshape( ( len(yp), len(xp) ) ), 100 )
+plt.clim( 0.0, 1.0 )
+plt.colorbar()
+plt.contour( Xp, Yp, ans.reshape( ( len(yp), len(xp) ) ) )
+plt.savefig( 'phi.' + '%.4u'%tstep + '.png' )
+plt.figure()
