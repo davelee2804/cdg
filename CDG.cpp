@@ -233,7 +233,6 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 
 		/* update the cell coefficients */
 		AXEB( betaInv_ij[cell_i], flux[cell_i], phiTemp->basis[cell_i]->ci, nBasis );
-		/* apply the limiter */
 		delete basis;
 	}
 
