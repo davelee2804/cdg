@@ -18,6 +18,19 @@
 //#define CDG_TEST 1
 
 CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) {
+	betaInv_ij = NULL;
+}
+
+CDG::~CDG() {
+	int i;
+
+	for( i = 0; i < phi->grid->nCells; i++ ) {
+		delete[] betaInv_ij[i];
+	}
+	delete[] betaInv_ij;
+}
+
+void CDG::InitBetaIJInv( Func* func ) {
 	int 		i, j, k, l, pi;
 	Grid* 		grid 		= phi->grid;
 	Cell*		cell;
@@ -29,28 +42,24 @@ CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) 
 	double		beta_ij[nBasis*nBasis];
 	double		volErr;
 
-	phiMax = -1.0e+10;
-	phiMin = +1.0e+10;
-	for( pi = 0; pi < grid->nCells; pi++ ) {
-		for( j = 0; j < nBasis; j++ ) {
-			if( phi->basis[pi]->ci[j] > phiMax ) {
-				phiMax = phi->basis[pi]->ci[j];
-			}
-			if( phi->basis[pi]->ci[j] < phiMin ) {
-				phiMin = phi->basis[pi]->ci[j];
-			}
+	if( betaInv_ij == NULL ) {
+		betaInv_ij = new double*[grid->nCells];
+		for( pi = 0; pi < grid->nCells; pi++ ) {
+			betaInv_ij[pi] = NULL;
 		}
 	}
 
-	betaInv_ij = new double*[grid->nCells];
-
 	/* set up the matrix inverse and intial basis coefficients */
 	for( pi = 0; pi < grid->nCells; pi++ ) {
-		betaInv_ij[pi] = new double[nBasis*nBasis];
+		if( betaInv_ij[pi] == NULL ) {
+			betaInv_ij[pi] = new double[nBasis*nBasis];
+		}
+
 		for( j = 0; j < nBasis*nBasis; j++ ) {
 			beta_ij[j] = 0.0;
 			betaInv_ij[pi][j] = 0.0;
 		}
+
 		cell = grid->cells[pi];
 		basis = phi->basis[pi];
 		for( k = 0; k < cell->n; k++ ) {
@@ -74,7 +83,7 @@ CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) 
 					weight = tri->wi[l]*tri->Area()/cell->Area();
 					coord = tri->qi[l];
 					/* basis initially set as the spatial values at the cell coordinates */
-					fj[j] += weight*basis->EvalIJ( coord, j )*basis->ci[j];
+					fj[j] += weight*basis->EvalIJ( coord, j )*func( coord );
 				}
 			}
 		}
@@ -85,15 +94,6 @@ CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) 
 			cout << "ERROR: basis function mean not equal to first component..." << volErr << endl;
 		}
 	}
-}
-
-CDG::~CDG() {
-	int i;
-
-	for( i = 0; i < phi->grid->nCells; i++ ) {
-		delete[] betaInv_ij[i];
-	}
-	delete[] betaInv_ij;
 }
 
 void CDG::Advect( double dt ) {
@@ -309,102 +309,6 @@ void CDG::Limiter( Field* phiTemp ) {
 		}
 	}
 }
-
-#if 0
-void CDG::Limiter( Field* phiTemp ) {
-	Grid*	grid	= phi->grid;
-	Cell*	cell;
-	Basis*	basis;
-	int 	cell_i, vert_i, cell_j, adjCell_i, basis_j;
-	int		nx, ny;
-	int		vinds[4], cinds[4], adjCells[3], maxInds[2];
-	double	atVerts[4], atVerts2[2];
-	bool	minLimit, maxLimit;
-	double	Aij[4], cj[2], AijInv[4];
-	double	incVal[4][3], min, max, avg;
-
-	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
-		cell = grid->cells[cell_i];
-		basis = phiTemp->basis[cell_i];
-		avg = basis->ci[0];
-		minLimit = maxLimit = false;
-		nx = cell_i%grid->nx;
-		ny = cell_i/grid->nx;
-
-		if( nx > 0 && nx < grid->nx - 1 && ny > 0 && ny < grid->ny - 1 ) {
-			/* for each vertex of the cell get the adjacent cell mean values */
-			grid->GetCellVertInds( cell_i, vinds );
-			for( vert_i = 0; vert_i < cell->n; vert_i++ ) {
-				atVerts[vert_i] = basis->EvalFull( cell->verts[vert_i] );
-				grid->GetVertCellInds( vinds[vert_i], cinds );
-				adjCell_i = 0;
-				for( cell_j = 0; cell_j < 4; cell_j++ ) {
-					if( cinds[cell_j] == cell_i ) {
-						continue;
-					}
-					adjCells[adjCell_i++] = cinds[cell_j];
-				}
-
-				for( adjCell_i = 0; adjCell_i < 3; adjCell_i++ ) {
-					incVal[vert_i][adjCell_i] = phiTemp->basis[adjCells[adjCell_i]]->ci[0];
-				}
-			}
-
-			/* find the highest minimum and lowest maximum  mean cell values exceeded at the vertices */
-			min = -1.0e+99;
-			max = +1.0e+99;
-			for( vert_i = 0; vert_i < cell->n; vert_i++ ) {
-				for( adjCell_i = 0; adjCell_i < 3; adjCell_i++ ) {
-					/* highest minimum */
-					if( atVerts[vert_i] < avg && atVerts[vert_i] < incVal[vert_i][adjCell_i] ) {
-						minLimit = true;
-						if( incVal[vert_i][adjCell_i] > min ) {
-							min = incVal[vert_i][adjCell_i];
-							maxInds[0] = vert_i;
-						}
-					}
-					/* lowest maximum */
-					else if( atVerts[vert_i] > avg && atVerts[vert_i] > incVal[vert_i][adjCell_i] ) {
-						maxLimit = true;
-						if( incVal[vert_i][adjCell_i] < max ) {
-							max = incVal[vert_i][adjCell_i];
-							maxInds[1] = vert_i;
-						}
-					}
-				}
-			}
-
-			if( !minLimit && !maxLimit ) {
-				continue;
-			}
-
-			if( !minLimit ) {
-				maxInds[0] = (maxInds[1]+2)%4;
-				min = atVerts[maxInds[0]];
-			}
-			else if( !maxLimit ) {
-				maxInds[1] = (maxInds[0]+2)%4;
-				max = atVerts[maxInds[1]];
-			}
-
-			atVerts2[0] = min;
-			atVerts2[1] = max;
-			for( vert_i = 0; vert_i < 2; vert_i++ ) {
-				for( basis_j = 0; basis_j < 2; basis_j++ ) {
-					Aij[vert_i*2+basis_j] = basis->EvalIJ( cell->verts[maxInds[vert_i]], basis_j + 1 );
-				}
-			}
-			MatInv( Aij, AijInv, 2 );
-			AXEB( AijInv, atVerts2, cj, 2 );
-			for( basis_j = 1; basis_j < basis->nFuncs; basis_j++ ) {
-				basis->ci[basis_j] = 0.0;
-			}
-			basis->ci[1] = cj[1];
-			basis->ci[basis->order] = cj[2];
-		}
-	}
-}
-#endif
 
 #if 0
 void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {

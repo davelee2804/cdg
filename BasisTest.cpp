@@ -33,7 +33,7 @@ void Distort( double* pt ) {
 
 /* test the basis function representation. since the grid is cartesian, use a first order basis:
  * 		c_0 + c_1.x + c_2.y + c_3.xy, 
- * located at the first order quadrature points for the quadralateral */
+ * evaluated at the quadrature points */
 int main() {
 	int			nx			= 1;
 	int			ny			= 1;
@@ -82,15 +82,6 @@ int main() {
 	poly = new Polygon( verts, 4, QUAD_ORDER );
 	basis = new Basis( poly, BASIS_ORDER, origin, 2.0, 2.0 );
 
-	for( j = 0; j < BASIS_ORDER; j++ ) {
-		for( i = 0; i < BASIS_ORDER; i++ ) {
-			pts[j*BASIS_ORDER+i][0] = -1.0 + (0.5 + i)*2.0/BASIS_ORDER;
-			pts[j*BASIS_ORDER+i][1] = -1.0 + (0.5 + j)*2.0/BASIS_ORDER;
-			Distort( pts[j*BASIS_ORDER+i] );
-			basis->ci[j*BASIS_ORDER+i] = func( pts[j*BASIS_ORDER+i] );
-		}
-	}
-
 	for( j = 0; j < BASIS_ORDER*BASIS_ORDER*BASIS_ORDER*BASIS_ORDER; j++ ) {
 		beta_ij[j] = 0.0;
 		betaInv_ij[j] = 0.0;
@@ -116,7 +107,7 @@ int main() {
 				weight = tri->wi[l]*tri->Area()/poly->Area();
 				coord = tri->qi[l];
 				/* basis initially set as the spatial values at the cell coordinates */
-				fj[j] += weight*basis->EvalIJ( coord, j )*basis->ci[j];
+				fj[j] += weight*basis->EvalIJ( coord, j )*func( coord );
 			}
 		}
 	}
@@ -149,12 +140,8 @@ int main() {
 		velx = new Field( grid );
 		vely = new Field( grid );
 
-		for( j = 0; j < grid->nCells; j++ ) {
-			for( k = 0; k < grid->cells[j]->nc; k++ ) {
-				field->basis[j]->ci[k] = func( grid->cells[j]->coords[k] );
-			}
-		}
 		cdg = new CDG( field, velx, vely );
+		cdg->InitBetaIJInv( func );
 
 		beta_ij_2 = new double[grid->cells[0]->nc*grid->cells[0]->nc];
 		cj = new double[grid->cells[0]->nc];

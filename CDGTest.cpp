@@ -69,13 +69,15 @@ int main() {
 			vely->basis[i]->ci[j] = uy( vgrid->cells[i]->coords[j] );
 		}
 	}
-	for( i = 0; i < pgrid->nCells; i++ ) {
-		for( j = 0; j < BASIS_ORDER*BASIS_ORDER; j++ ) {
-			phi->basis[i]->ci[j] = p0( pgrid->cells[i]->coords[j] );
-			ans->basis[i]->ci[j] = p1( pgrid->cells[i]->coords[j] );
-		}
-	}
-	cdg	= new CDG( phi, velx, vely );
+
+	/* set up the final solution */
+	cdg	= new CDG( ans, velx, vely );
+	cdg->InitBetaIJInv( p1 );
+	delete cdg;
+
+	/* set up the actual solver */
+	cdg = new CDG( phi, velx, vely );
+	cdg->InitBetaIJInv( p0 );
 
 	pgrid->Write( "pgrid" );
 	vgrid->Write( "vgrid" );

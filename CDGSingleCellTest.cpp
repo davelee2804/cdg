@@ -20,6 +20,12 @@ using namespace std;
 #define QUAD_ORDER 2
 #define BASIS_ORDER 2
 
+double p0( double* x ) {
+	if( x[0] > -0.75 && x[0] < -0.50 && x[1] > -0.75 && x[1] < -0.50 ) return 1.0;
+
+	return 0.0;
+}
+
 int main() {
 	Grid*	pgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
 	Grid*	vgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, 2, false );
@@ -30,14 +36,13 @@ int main() {
 	int		i, j;
 	double	dt		= 0.25*2.0/NX/1.0;
 
+	cdg->InitBetaIJInv( p0 );
+
 	for( i = 0; i < vgrid->nCells; i++ ) {
 		for( j = 0; j < vgrid->cells[j]->nc; j++ ) {
 			velx->basis[i]->ci[j] = +1.0;
 			vely->basis[i]->ci[j] = +1.0;
 		}
-	}
-	for( j = 0; j < pgrid->cells[0]->nc; j++ ) {
-		phi->basis[1*NX+1]->ci[j] = 1.0;
 	}
 
 	vgrid->Write( "vgrid" );

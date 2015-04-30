@@ -61,8 +61,8 @@ double Basis::EvalIJ( double* pt, int i ) {
 	}
 	b *= aInv;
 
-	//return a*( pow( pt[0] - origin[0], i%order )*pow( pt[1] - origin[1], i/order ) - b );
-	return pow( pt[0] - origin[0], i%order )*pow( pt[1] - origin[1], i/order );
+	return a*( pow( pt[0] - origin[0], i%order )*pow( pt[1] - origin[1], i/order ) - b );
+	//return pow( pt[0] - origin[0], i%order )*pow( pt[1] - origin[1], i/order );
 }
 
 double Basis::EvalConst( double* pt ) {
