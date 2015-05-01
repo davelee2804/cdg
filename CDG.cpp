@@ -214,7 +214,7 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		AXEB( betaInv_ij[cell_i], flux[cell_i], phiTemp->basis[cell_i]->ci, nBasis );
 	}
 
-	Limiter( phiTemp );
+	//Limiter( phiTemp );
 
 	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
 		delete[] flux[cell_i];
