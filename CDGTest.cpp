@@ -15,11 +15,11 @@
 
 using namespace std;
 
-#define NX 64
-#define NY 64
+#define NX 32
+#define NY 32
 
-#define QUAD_ORDER 2
-#define BASIS_ORDER 2
+#define QUAD_ORDER 3
+#define BASIS_ORDER 3
 
 double ux( double* p ) {
 	double radius	= sqrt( p[0]*p[0] + p[1]*p[1] );
@@ -64,7 +64,7 @@ int main() {
 	double		val_n, val_a;
 
 	for( i = 0; i < vgrid->nCells; i++ ) {
-		for( j = 0; j < BASIS_ORDER*BASIS_ORDER; j++ ) {
+		for( j = 0; j < 4; j++ ) {
 			velx->basis[i]->ci[j] = ux( vgrid->cells[i]->coords[j] );
 			vely->basis[i]->ci[j] = uy( vgrid->cells[i]->coords[j] );
 		}

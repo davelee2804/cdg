@@ -214,7 +214,12 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		AXEB( betaInv_ij[cell_i], flux[cell_i], phiTemp->basis[cell_i]->ci, nBasis );
 	}
 
-	//Limiter( phiTemp );
+	if( phiTemp->basis[0]->order == 2 ) {
+		Limiter_FirstOrder( phiTemp );
+	}
+	if( phiTemp->basis[0]->order > 2 ) {
+		Limiter_SecondOrder( phiTemp );
+	}
 
 	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
 		delete[] flux[cell_i];
@@ -222,56 +227,22 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	delete[] flux;
 }
 
-void CDG::Limiter( Field* phiTemp ) {
+void CDG::Limiter_FirstOrder( Field* phiTemp ) {
 	Grid*	grid	= phi->grid;
-	Cell*	cell;
 	Basis*	basis;
 	int		nx, ny;
-	int		vinds[4];
-	int		cell_i, vert_i, ci, cj, basis_i;
-	double	maxPhiAtVert, minPhiAtVert, phiAtVert, maxPhiInCell, minPhiInCell, phiInCell;
-	double	alpha, gamma, dxTmp, dyTmp;
+	int		cell_i, basis_i;
+	double	alpha, dxTmp, dyTmp;
 
 	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
-		cell = grid->cells[cell_i];
 		basis = phiTemp->basis[cell_i];
 		nx = cell_i%grid->nx;
 		ny = cell_i/grid->nx;
 
 		if( nx > 0 && nx < grid->nx - 1 && ny > 0 && ny < grid->ny - 1 ) {
-			grid->GetCellVertInds( cell_i, vinds );
-			maxPhiAtVert = maxPhiInCell = -1.0e+99;
-			minPhiAtVert = minPhiInCell = +1.0e+99;
-			for( vert_i = 0; vert_i < cell->n; vert_i++ ) {
-				phiAtVert = basis->EvalFull( cell->verts[vert_i] ) - basis->ci[0];
-				minPhiAtVert = ( phiAtVert < minPhiAtVert ) ? phiAtVert : minPhiAtVert;
-				maxPhiAtVert = ( phiAtVert > maxPhiAtVert ) ? phiAtVert : maxPhiAtVert;
-			}
-			for( cj = ny - 1; cj < ny + 2; cj++ ) {
-				for( ci = nx - 1; ci < nx + 2; ci++ ) {
-					if( ci == nx && cj == ny ) {
-						continue;
-					}
-					phiInCell = phiTemp->basis[cj*grid->nx+ci]->ci[0] - basis->ci[0];
-					minPhiInCell = ( phiInCell < minPhiInCell ) ? phiInCell : minPhiInCell;
-					maxPhiInCell = ( phiInCell > maxPhiInCell ) ? phiInCell : maxPhiInCell;
-				}
-			}
+			alpha = CellLimiter( phiTemp, cell_i );
 
-			alpha = 1.0;
-			if( fabs( minPhiAtVert ) > 1.0e-6 ) {
-				alpha = minPhiInCell/minPhiAtVert > 0.0 ? minPhiInCell/minPhiAtVert : 0.0;
-			}
-
-			gamma = 1.0;
-			if( fabs( maxPhiAtVert ) > 1.0e-6 ) {
-				gamma = maxPhiInCell/maxPhiAtVert > 0.0 ? maxPhiInCell/maxPhiAtVert : 0.0;
-			}
-
-			alpha = ( alpha < gamma ) ? alpha : gamma;
-			alpha = ( alpha < 1.0 )   ? alpha : 1.0;
-
-			if( alpha > 1.0 - 1.0e-4 ) {
+			if( fabs( alpha ) > 1.0 - 1.0e-4 ) {
 				continue;
 			}
 
@@ -281,8 +252,148 @@ void CDG::Limiter( Field* phiTemp ) {
 			for( basis_i = 1; basis_i < basis->nFuncs; basis_i++ ) {
 				basis->ci[basis_i] = 0.0;
 			}
-			basis->ci[1] = alpha*dxTmp;
+			basis->ci[1]            = alpha*dxTmp;
 			basis->ci[basis->order] = alpha*dyTmp;
 		}
 	}
+}
+
+void CDG::Limiter_SecondOrder( Field* phiTemp ) {
+	Grid*	grid	= phi->grid;
+	Basis*	basis;
+	int		nx, ny;
+	int		cell_i, basis_i;
+	double	alpha_1, alpha_x, alpha_y, alpha_2, dxTmp, dyTmp, dxxTmp, dyyTmp, dxyTmp;
+
+	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
+		basis = phiTemp->basis[cell_i];
+		nx = cell_i%grid->nx;
+		ny = cell_i/grid->nx;
+
+		if( nx > 0 && nx < grid->nx - 1 && ny > 0 && ny < grid->ny - 1 ) {
+			alpha_1 = CellLimiter( phiTemp, cell_i );
+			alpha_x = CellSecondLimiter( phiTemp, cell_i, 0 );
+			alpha_y = CellSecondLimiter( phiTemp, cell_i, 1 );
+
+			alpha_2 = ( alpha_x < alpha_y ) ? alpha_x : alpha_y;
+			alpha_1 = ( alpha_1 > alpha_2 ) ? alpha_1 : alpha_2;
+
+			if( fabs( alpha_1 ) > 1.0 - 1.0e-4 && fabs( alpha_2 ) > 1.0 - 1.0e-4 ) {
+				continue;
+			}
+
+			dxTmp = basis->ci[1];
+			dyTmp = basis->ci[basis->order];
+			dxxTmp = basis->ci[2];
+			dyyTmp = basis->ci[2*basis->order];
+			dxyTmp = basis->ci[basis->order+1];
+
+			for( basis_i = 1; basis_i < basis->nFuncs; basis_i++ ) {
+				basis->ci[basis_i] = 0.0;
+			}
+			basis->ci[1]              = alpha_1*dxTmp;
+			basis->ci[basis->order]   = alpha_1*dyTmp;
+			basis->ci[2]              = alpha_2*dxxTmp;
+			basis->ci[2*basis->order] = alpha_2*dyyTmp;
+			basis->ci[basis->order+1] = alpha_2*dxyTmp;
+		}
+	}
+}
+
+double CDG::CellLimiter( Field* phiTemp, int cell_i ) {
+	Grid*		grid			= phi->grid;
+	Polygon* 	poly 			= grid->cells[cell_i];
+	Basis*		basis 			= phiTemp->basis[cell_i];
+	int			vinds[4];
+	int			nx				= cell_i%grid->nx;
+	int			ny				= cell_i/grid->nx;
+	int			vi, ci, cj;
+	double		maxPhiAtVert	= -1.0e+99;
+	double		minPhiAtVert	= +1.0e+99;
+	double		maxPhiInCell	= -1.0e+99;
+	double		minPhiInCell	= +1.0e+99;
+	double		phiAtVert, phiInCell, alpha, gamma;
+
+	grid->GetCellVertInds( cell_i, vinds );
+
+	for( vi = 0; vi < poly->n; vi++ ) {
+		phiAtVert = basis->EvalFull( poly->verts[vi] ) - basis->ci[0];
+		minPhiAtVert = ( phiAtVert < minPhiAtVert ) ? phiAtVert : minPhiAtVert;
+		maxPhiAtVert = ( phiAtVert > maxPhiAtVert ) ? phiAtVert : maxPhiAtVert;
+	}
+	for( cj = ny - 1; cj < ny + 2; cj++ ) {
+		for( ci = nx - 1; ci < nx + 2; ci++ ) {
+			if( ci == nx && cj == ny ) {
+				continue;
+			}
+			phiInCell = phiTemp->basis[cj*grid->nx+ci]->ci[0] - basis->ci[0];
+			minPhiInCell = ( phiInCell < minPhiInCell ) ? phiInCell : minPhiInCell;
+			maxPhiInCell = ( phiInCell > maxPhiInCell ) ? phiInCell : maxPhiInCell;
+		}
+	}
+
+	alpha = 1.0;
+	if( fabs( minPhiAtVert ) > 1.0e-6 ) {
+		alpha = minPhiInCell/minPhiAtVert > 0.0 ? minPhiInCell/minPhiAtVert : 0.0;
+	}
+
+	gamma = 1.0;
+	if( fabs( maxPhiAtVert ) > 1.0e-6 ) {
+		gamma = maxPhiInCell/maxPhiAtVert > 0.0 ? maxPhiInCell/maxPhiAtVert : 0.0;
+	}
+
+	alpha = ( alpha < gamma ) ? alpha : gamma;
+	alpha = ( alpha < 1.0 )   ? alpha : 1.0;
+
+	return alpha;
+}
+
+double CDG::CellSecondLimiter( Field* phiTemp, int cell_i, int dim ) {
+	Grid*		grid			= phi->grid;
+	Polygon* 	poly 			= grid->cells[cell_i];
+	Basis*		basis 			= phiTemp->basis[cell_i];
+	int			vinds[4];
+	int			nx				= cell_i%grid->nx;
+	int			ny				= cell_i/grid->nx;
+	int			vi, ci, cj, co;
+	double		maxDPhiAtVert	= -1.0e+99;
+	double		minDPhiAtVert	= +1.0e+99;
+	double		maxDPhiInCell	= -1.0e+99;
+	double		minDPhiInCell	= +1.0e+99;
+	double		dPhiAtVert, dPhiInCell;
+	double 		alpha, gamma;
+
+	grid->GetCellVertInds( cell_i, vinds );
+
+	for( vi = 0; vi < poly->n; vi++ ) {
+		dPhiAtVert = basis->EvalDerivFull( poly->verts[vi], dim );
+		minDPhiAtVert = ( dPhiAtVert < minDPhiAtVert ) ? dPhiAtVert : minDPhiAtVert;
+		maxDPhiAtVert = ( dPhiAtVert > maxDPhiAtVert ) ? dPhiAtVert : maxDPhiAtVert;
+	}
+	for( cj = ny - 1; cj < ny + 2; cj++ ) {
+		for( ci = nx - 1; ci < nx + 2; ci++ ) {
+			if( ci == nx && cj == ny ) {
+				continue;
+			}
+			co = cj*grid->nx + ci;
+			dPhiInCell = phiTemp->basis[co]->EvalDerivFull( grid->cells[co]->origin, dim );
+			minDPhiInCell = ( dPhiInCell < minDPhiInCell ) ? dPhiInCell : minDPhiInCell;
+			maxDPhiInCell = ( dPhiInCell > maxDPhiInCell ) ? dPhiInCell : maxDPhiInCell;
+		}
+	}
+
+	alpha = 1.0;
+	if( fabs( minDPhiAtVert ) > 1.0e-6 ) {
+		alpha = minDPhiInCell/minDPhiAtVert > 0.0 ? minDPhiInCell/minDPhiAtVert : 0.0;
+	}
+
+	gamma = 1.0;
+	if( fabs( maxDPhiAtVert ) > 1.0e-6 ) {
+		gamma = maxDPhiInCell/maxDPhiAtVert > 0.0 ? maxDPhiInCell/maxDPhiAtVert : 0.0;
+	}
+
+	alpha = ( alpha < gamma ) ? alpha : gamma;
+	alpha = ( alpha < 1.0 )   ? alpha : 1.0;
+
+	return alpha;
 }

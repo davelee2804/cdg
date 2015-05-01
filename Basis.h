@@ -11,8 +11,10 @@ class Basis {
 		double 		origin[2];
 		Polygon*	poly;
 		double		EvalIJ( double* pt, int i );
+		double		EvalDerivIJ( double* pt, int i, int dim );
 		double 		EvalConst( double* pt );
 		double 		EvalFull( double* pt );
+		double 		EvalDerivFull( double* pt, int dim );
 		double		EvalWithCoeffs( double* pt, double* coeffs );
 		bool		TestMean( double* volErr );
 };
