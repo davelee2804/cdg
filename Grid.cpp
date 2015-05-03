@@ -5,14 +5,12 @@
 #include "Edge.h"
 #include "Triangle.h"
 #include "Polygon.h"
-#include "Cell.h"
 #include "Grid.h"
 
 Grid::Grid( int _nx, int _ny, double _minx, double _miny, double _maxx, double _maxy, int _quadOrder, int _basisOrder, bool _internal ) {
-	int 		i, j, k, l, ei = 0;
+	int 		i, j, ei = 0;
 	double 		x, y;
-	double** 	cellVerts;
-	double**	points;
+	double** 	polyVerts;
 	double		*p1, *p2;
 
 	nx = _nx;
@@ -32,20 +30,16 @@ Grid::Grid( int _nx, int _ny, double _minx, double _miny, double _maxx, double _
 
 	nVerts = (nx+1)*(ny+1);
 	nEdges = (nx+1)*ny + nx*(ny+1);
-	nCells = nx*ny;
+	nPolys = nx*ny;
 
 	verts = new double*[nVerts];
 	edges = new Edge*[nEdges];
-	cells = new Cell*[nCells];
-	cellVerts = new double*[4];
-	cellVerts[0] = new double[2];
-	cellVerts[1] = new double[2];
-	cellVerts[2] = new double[2];
-	cellVerts[3] = new double[2];
-	points = new double*[basisOrder*basisOrder];
-	for( i = 0; i < basisOrder*basisOrder; i++ ) {
-		points[i] = new double[2];
-	}
+	polys = new Polygon*[nPolys];
+	polyVerts = new double*[4];
+	polyVerts[0] = new double[2];
+	polyVerts[1] = new double[2];
+	polyVerts[2] = new double[2];
+	polyVerts[3] = new double[2];
 
 	/* generate the verts */
 	for( j = 0; j < ny+1; j++ ) {
@@ -78,52 +72,34 @@ Grid::Grid( int _nx, int _ny, double _minx, double _miny, double _maxx, double _
 	/* generate the polygons */
 	for( j = 0; j < ny; j++ ) {
 		for( i = 0; i < nx; i++ ) {
-			/* enter the verts for each cell clockwise */
-			cellVerts[0][0] = verts[(j+0)*(nx+1)+(i+0)][0];
-			cellVerts[0][1] = verts[(j+0)*(nx+1)+(i+0)][1];
-			cellVerts[1][0] = verts[(j+1)*(nx+1)+(i+0)][0];
-			cellVerts[1][1] = verts[(j+1)*(nx+1)+(i+0)][1];
-			cellVerts[2][0] = verts[(j+1)*(nx+1)+(i+1)][0];
-			cellVerts[2][1] = verts[(j+1)*(nx+1)+(i+1)][1];
-			cellVerts[3][0] = verts[(j+0)*(nx+1)+(i+1)][0];
-			cellVerts[3][1] = verts[(j+0)*(nx+1)+(i+1)][1];
+			/* enter the verts for each poly clockwise */
+			polyVerts[0][0] = verts[(j+0)*(nx+1)+(i+0)][0];
+			polyVerts[0][1] = verts[(j+0)*(nx+1)+(i+0)][1];
+			polyVerts[1][0] = verts[(j+1)*(nx+1)+(i+0)][0];
+			polyVerts[1][1] = verts[(j+1)*(nx+1)+(i+0)][1];
+			polyVerts[2][0] = verts[(j+1)*(nx+1)+(i+1)][0];
+			polyVerts[2][1] = verts[(j+1)*(nx+1)+(i+1)][1];
+			polyVerts[3][0] = verts[(j+0)*(nx+1)+(i+1)][0];
+			polyVerts[3][1] = verts[(j+0)*(nx+1)+(i+1)][1];
 
-			/* add the internal points for higher order representations */
-			for( k = 0; k < basisOrder; k++ ) {
-				for( l = 0; l < basisOrder; l++ ) {
-					if( internal ) {
-						points[k*basisOrder+l][0] = minx + i*dx + (0.5 + l)*dx/basisOrder;
-						points[k*basisOrder+l][1] = miny + j*dy + (0.5 + k)*dy/basisOrder;
-					}
-					else {
-						points[k*basisOrder+l][0] = minx + i*dx + l*dx/(basisOrder - 1);
-						points[k*basisOrder+l][1] = miny + j*dy + k*dy/(basisOrder - 1);
-					}
-				}
-			}
-
-			/* enter the edges for each cell - order not important as searching routines use polygon verts and sub 
+			/* enter the edges for each poly - order not important as searching routines use polygon verts and sub 
 			   triangles, not edges. edge ordering is left/right/bottom/top. */
-			cells[j*nx+i] = new Cell( cellVerts, 4, quadOrder, basisOrder*basisOrder, points );
+			polys[j*nx+i] = new Polygon( polyVerts, 4, quadOrder );
 		}
 	}
 
-	delete[] cellVerts[0];
-	delete[] cellVerts[1];
-	delete[] cellVerts[2];
-	delete[] cellVerts[3];
-	delete[] cellVerts;
-	for( i = 0; i < basisOrder*basisOrder; i++ ) {
-		delete[] points[i];
-	}
-	delete[] points;
+	delete[] polyVerts[0];
+	delete[] polyVerts[1];
+	delete[] polyVerts[2];
+	delete[] polyVerts[3];
+	delete[] polyVerts;
 }
 
 Grid::~Grid() {
 	int i;
 
-	for( i = 0; i < nCells; i++ ) {
-		delete cells[i];
+	for( i = 0; i < nPolys; i++ ) {
+		delete polys[i];
 	}
 	for( i = 0; i < nEdges; i++ ) {
 		delete edges[i];
@@ -131,25 +107,25 @@ Grid::~Grid() {
 	for( i = 0; i < nVerts; i++ ) {
 		delete[] verts[i];
 	}
-	delete[] cells;
+	delete[] polys;
 	delete[] edges;
 	delete[] verts;
 }
 
-Cell* Grid::FindCell( double* pt ) {
-	int 	i 		= (pt[0] - minx)/dx;	
-	int 	j 		= (pt[1] - miny)/dy;
-	Cell* 	cell 	= cells[j*nx+i];
+Polygon* Grid::FindPoly( double* pt ) {
+	int 		i 		= (pt[0] - minx)/dx;	
+	int 		j 		= (pt[1] - miny)/dy;
+	Polygon* 	poly 	= polys[j*nx+i];
 
 	/* sanity test */
-	if( !cell->IsInside( pt ) ) {
-		cerr << "ERROR in cell finding algorithm" << endl;
+	if( !poly->IsInside( pt ) ) {
+		cerr << "ERROR in poly finding algorithm" << endl;
 		abort();
 	}
-	return cell;
+	return poly;
 }
 
-int Grid::GetCellIndex( double* pt ) {
+int Grid::GetPolyIndex( double* pt ) {
 	int 	i 		= (pt[0] - minx)/dx;	
 	int 	j 		= (pt[1] - miny)/dy;
 
@@ -190,7 +166,7 @@ void Grid::EdgeIndexToCoord( int ei, int* norm, int* xi, int* yj ) {
 	}
 }
 
-void Grid::GetEdgeCells( int ei, Cell* p1, Cell* p2 ) {
+void Grid::GetEdgePolys( int ei, Polygon* p1, Polygon* p2 ) {
 	int norm = ei/((nx+1)*ny);		// norm = 0: edge is normal to x, norm = 1: edge is normal to y
 	int	dummy = ei - norm*(nx+1)*ny;
 	int xi = ( norm == 0 ) ? dummy%(nx+1) : dummy%nx;
@@ -198,27 +174,27 @@ void Grid::GetEdgeCells( int ei, Cell* p1, Cell* p2 ) {
 
 	/* polygons left and right */
 	if( norm == 0 ) {
-		/* disregard boundary cells for now */
+		/* disregard boundary polys for now */
 		if( xi == 0 || xi == nx ) {	
 			p1 = p2 = NULL;
 			return;
 		}
-		p1 = cells[yj*nx+xi-1];
-		p2 = cells[yj*nx+xi];
+		p1 = polys[yj*nx+xi-1];
+		p2 = polys[yj*nx+xi];
 	}
 	/* polygons bottom and top */
 	else {
-		/* disregard boundary cells for now */
+		/* disregard boundary polys for now */
 		if( yj == 0 || yj == ny ) {	
 			p1 = p2 = NULL;
 			return;
 		}
-		p1 = cells[(yj-1)*nx+xi];
-		p2 = cells[yj*nx+xi];
+		p1 = polys[(yj-1)*nx+xi];
+		p2 = polys[yj*nx+xi];
 	}
 }
 
-bool Grid::GetEdgeCellInds( int ei, int* pinds ) {
+bool Grid::GetEdgePolyInds( int ei, int* pinds ) {
 	int norm, xi, yj;
 
 	EdgeIndexToCoord( ei, &norm, &xi, &yj );
@@ -252,7 +228,7 @@ bool Grid::GetEdgeCellInds( int ei, int* pinds ) {
 	return true;
 }
 
-void Grid::GetCellEdgeInds( int pi, int* einds ) {
+void Grid::GetPolyEdgeInds( int pi, int* einds ) {
 	int xi 		= pi%nx;
 	int yj 		= pi/nx;
 	int shift 	= (nx+1)*ny;
@@ -264,7 +240,7 @@ void Grid::GetCellEdgeInds( int pi, int* einds ) {
 }
 
 /* no chech for bounndary vertices yet */
-void Grid::GetVertCellInds( int vi, int* cinds ) {
+void Grid::GetVertPolyInds( int vi, int* cinds ) {
 	int xi = vi%(nx+1);
 	int yj = vi/(nx+1);
 
@@ -275,7 +251,7 @@ void Grid::GetVertCellInds( int vi, int* cinds ) {
 }
 
 /* return in clockwise orientation */
-void Grid::GetCellVertInds( int ci, int* vinds ) {
+void Grid::GetPolyVertInds( int ci, int* vinds ) {
 	int xi = ci%nx;
 	int yj = ci/nx;
 
@@ -309,20 +285,20 @@ void Grid::UpdateEdges() {
 	}
 }
 
-void Grid::UpdateCells() {
+void Grid::UpdatePolys() {
 	int i, j, pi = 0;
 
 	for( j = 0; j < ny; j++ ) {
 		for( i = 0; i < nx; i++ ) {
-			cells[pi]->verts[0][0] = verts[(j+0)*(nx+1)+(i+0)][0];
-			cells[pi]->verts[0][1] = verts[(j+0)*(nx+1)+(i+0)][1];
-			cells[pi]->verts[1][0] = verts[(j+1)*(nx+1)+(i+0)][0];
-			cells[pi]->verts[1][1] = verts[(j+1)*(nx+1)+(i+0)][1];
-			cells[pi]->verts[2][0] = verts[(j+1)*(nx+1)+(i+1)][0];
-			cells[pi]->verts[2][1] = verts[(j+1)*(nx+1)+(i+1)][1];
-			cells[pi]->verts[3][0] = verts[(j+0)*(nx+1)+(i+1)][0];
-			cells[pi]->verts[3][1] = verts[(j+0)*(nx+1)+(i+1)][1];
-			cells[pi]->GenOrigin();
+			polys[pi]->verts[0][0] = verts[(j+0)*(nx+1)+(i+0)][0];
+			polys[pi]->verts[0][1] = verts[(j+0)*(nx+1)+(i+0)][1];
+			polys[pi]->verts[1][0] = verts[(j+1)*(nx+1)+(i+0)][0];
+			polys[pi]->verts[1][1] = verts[(j+1)*(nx+1)+(i+0)][1];
+			polys[pi]->verts[2][0] = verts[(j+1)*(nx+1)+(i+1)][0];
+			polys[pi]->verts[2][1] = verts[(j+1)*(nx+1)+(i+1)][1];
+			polys[pi]->verts[3][0] = verts[(j+0)*(nx+1)+(i+1)][0];
+			polys[pi]->verts[3][1] = verts[(j+0)*(nx+1)+(i+1)][1];
+			polys[pi]->GenOrigin();
 			pi++;
 		}
 	}
@@ -330,43 +306,61 @@ void Grid::UpdateCells() {
 
 void Grid::UpdateTriangles() {
 	int 		i, j;
-	Cell* 		cell;
+	Polygon* 	poly;
 	Triangle*	tri;
 
-	for( i = 0; i < nCells; i++ ) {
-		cell = cells[i];
-		for( j = 0; j < cell->n; j++ ) {
-			tri = cell->tris[j];
-			tri->a[0] = cell->verts[j][0];
-			tri->a[1] = cell->verts[j][1];
-			tri->b[0] = cell->verts[(j+1)%cell->n][0];
-			tri->b[1] = cell->verts[(j+1)%cell->n][1];
-			tri->c[0] = cell->origin[0];
-			tri->c[1] = cell->origin[1];
+	for( i = 0; i < nPolys; i++ ) {
+		poly = polys[i];
+		for( j = 0; j < poly->n; j++ ) {
+			tri = poly->tris[j];
+			tri->a[0] = poly->verts[j][0];
+			tri->a[1] = poly->verts[j][1];
+			tri->b[0] = poly->verts[(j+1)%poly->n][0];
+			tri->b[1] = poly->verts[(j+1)%poly->n][1];
+			tri->c[0] = poly->origin[0];
+			tri->c[1] = poly->origin[1];
 		}
 	}
 }
 
-void Grid::Write( string fname ) {
-	ofstream file;
-	char filename[80];
-	int i, j;
+void Grid::Write( string fname, int n ) {
+	ofstream 	file;
+	char 		filename[80];
+	int 		i, j;
+	double*		xCoords	= new double[n];
+	double*		yCoords	= new double[n];
+
+	if( internal ) {
+		for( i = 0; i < n; i++ ) {
+			xCoords[i] = (0.5 + i)*dx/n;
+			yCoords[i] = (0.5 + i)*dy/n;
+		}
+	}
+	else {
+		for( i = 0; i < n; i++ ) {
+			xCoords[i] = i*dx/(n-1);
+			yCoords[i] = i*dy/(n-1);
+		}
+	}
 
 	sprintf( filename, "output/%s.x.txt", fname.c_str() );
 	file.open( filename );
 	for( i = 0; i < nx; i++ ) {
-		for( j = 0; j < basisOrder; j++ ) {
-			file << cells[i]->coords[j][0] << endl;
+		for( j = 0; j < n; j++ ) {
+			file << minx + i*dx + xCoords[j] << endl;
 		}
 	}
 	file.close();
 
 	sprintf( filename, "output/%s.y.txt", fname.c_str() );
 	file.open( filename );
-	for( i = 0; i < nCells; i += nx + 1 ) {
-		for( j = 0; j < basisOrder*basisOrder; j += basisOrder ) {
-			file << cells[i]->coords[j][1] << endl;
+	for( i = 0; i < ny; i++ ) {
+		for( j = 0; j < n; j ++ ) {
+			file << miny + i*dy + yCoords[j] << endl;
 		}
 	}
 	file.close();
+
+	delete[] xCoords;
+	delete[] yCoords;
 }

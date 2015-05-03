@@ -1,7 +1,6 @@
 #include "Edge.h"
 #include "Triangle.h"
 #include "Polygon.h"
-#include "Cell.h"
 #include "Grid.h"
 #include "Basis.h"
 #include "Field.h"
@@ -49,11 +48,11 @@ void CFA::Advect( double dt ) {
 
 	CalcChars( preGrid, dt );
 	preGrid->UpdateEdges();
-	preGrid->UpdateCells();
+	preGrid->UpdatePolys();
 	preGrid->UpdateTriangles();
 	CalcFluxes( preGrid, phiTemp, dt );
-	for( i = 0; i < grid->nCells; i++ ) {
-		for( j = 0; j < grid->cells[0]->nc; j++ ) {
+	for( i = 0; i < grid->nPolys; i++ ) {
+		for( j = 0; j < phi->basis[i]->nFuncs; j++ ) {
 			phi->basis[i]->ci[j] += phiTemp->basis[i]->ci[j];
 		}
 	}
@@ -141,7 +140,7 @@ Polygon* CFA::CreatePreImage( int ei, Grid* grid, Grid* preGrid, int* into, int*
 	norm = ei/((grid->nx+1)*grid->ny);
 
 	/* ignore boundaries and edges incident on boundaries for now */
-	if( !grid->GetEdgeCellInds( ei, pinds ) ) {
+	if( !grid->GetEdgePolyInds( ei, pinds ) ) {
 		return NULL;
 	}
 
@@ -197,11 +196,10 @@ Polygon* CFA::CreatePreImage( int ei, Grid* grid, Grid* preGrid, int* into, int*
 }
 
 void CFA::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
-	int 	ei, pi, pinds[6], into, from;
-	Grid*	grid	= phi->grid;
-	Polygon	*prePoly, *intPoly;
-	Cell*	incPoly;
-	double 	weight;
+	int 		ei, pi, pinds[6], into, from;
+	Grid*		grid	= phi->grid;
+	Polygon		*prePoly, *intPoly, *incPoly;
+	double		weight;
 
 	for( ei = 0; ei < grid->nEdges; ei++ ) {
 		prePoly = CreatePreImage( ei, grid, preGrid, &into, &from, pinds );
@@ -211,13 +209,13 @@ void CFA::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 
 		for( pi = 0; pi < 6; pi++ ) {
 			from = pinds[pi];
-			incPoly = grid->cells[from];
+			incPoly = grid->polys[from];
 			//intPoly = prePoly->Intersection( incPoly );
 			intPoly = Intersection( prePoly, incPoly );
 			if( intPoly ) {
 #ifdef CFA_TEST
 				if( pinds[pi] == into && intPoly->Area()/grid->dx/grid->dy > 1.0e-8 ) {
-					cerr << "ERROR: swept region intersection with inward fluxing cell, area fraction: " << intPoly->Area()/grid->dx/grid->dy << endl;
+					cerr << "ERROR: swept region intersection with inward fluxing poly, area fraction: " << intPoly->Area()/grid->dx/grid->dy << endl;
 					//abort();
 					//continue;
 				}

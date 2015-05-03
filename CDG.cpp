@@ -4,7 +4,6 @@
 #include "Edge.h"
 #include "Triangle.h"
 #include "Polygon.h"
-#include "Cell.h"
 #include "Basis.h"
 #include "Grid.h"
 #include "Field.h"
@@ -24,7 +23,7 @@ CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) 
 CDG::~CDG() {
 	int i;
 
-	for( i = 0; i < phi->grid->nCells; i++ ) {
+	for( i = 0; i < phi->grid->nPolys; i++ ) {
 		delete[] betaInv_ij[i];
 	}
 	delete[] betaInv_ij;
@@ -33,7 +32,7 @@ CDG::~CDG() {
 void CDG::InitBetaIJInv( Func* func ) {
 	int 		i, j, k, l, pi;
 	Grid* 		grid 		= phi->grid;
-	Cell*		cell;
+	Polygon*	poly;
 	Triangle*	tri;
 	Basis*		basis;
 	int			nBasis		= phi->basis[0]->nFuncs;
@@ -43,14 +42,14 @@ void CDG::InitBetaIJInv( Func* func ) {
 	double		volErr;
 
 	if( betaInv_ij == NULL ) {
-		betaInv_ij = new double*[grid->nCells];
-		for( pi = 0; pi < grid->nCells; pi++ ) {
+		betaInv_ij = new double*[grid->nPolys];
+		for( pi = 0; pi < grid->nPolys; pi++ ) {
 			betaInv_ij[pi] = NULL;
 		}
 	}
 
 	/* set up the matrix inverse and intial basis coefficients */
-	for( pi = 0; pi < grid->nCells; pi++ ) {
+	for( pi = 0; pi < grid->nPolys; pi++ ) {
 		if( betaInv_ij[pi] == NULL ) {
 			betaInv_ij[pi] = new double[nBasis*nBasis];
 		}
@@ -60,14 +59,14 @@ void CDG::InitBetaIJInv( Func* func ) {
 			betaInv_ij[pi][j] = 0.0;
 		}
 
-		cell = grid->cells[pi];
+		poly = grid->polys[pi];
 		basis = phi->basis[pi];
-		for( k = 0; k < cell->n; k++ ) {
-			tri = cell->tris[k];
+		for( k = 0; k < poly->n; k++ ) {
+			tri = poly->tris[k];
 			for( l = 0; l < tri->nQuadPts; l++ ) {
 				for( j = 0; j < nBasis; j++ ) {
 					for( i = 0; i < nBasis; i++ ) {
-						weight = tri->wi[l]*tri->Area()/cell->Area();
+						weight = tri->wi[l]*tri->Area()/poly->Area();
 						coord = tri->qi[l];
 						beta_ij[j*nBasis+i] += weight*basis->EvalIJ( coord, i )*basis->EvalIJ( coord, j );
 					}
@@ -77,12 +76,12 @@ void CDG::InitBetaIJInv( Func* func ) {
 		MatInv( beta_ij, betaInv_ij[pi], nBasis );
 		for( j = 0; j < nBasis; j++ ) {
 			fj[j] = 0.0;
-			for( k = 0; k < cell->n; k++ ) {
-				tri = cell->tris[k];
+			for( k = 0; k < poly->n; k++ ) {
+				tri = poly->tris[k];
 				for( l = 0; l < tri->nQuadPts; l++ ) {
-					weight = tri->wi[l]*tri->Area()/cell->Area();
+					weight = tri->wi[l]*tri->Area()/poly->Area();
 					coord = tri->qi[l];
-					/* basis initially set as the spatial values at the cell coordinates */
+					/* basis initially set as the spatial values at the poly coordinates */
 					fj[j] += weight*basis->EvalIJ( coord, j )*func( coord );
 				}
 			}
@@ -103,7 +102,7 @@ void CDG::Advect( double dt ) {
 
 	CalcChars( preGrid, dt );
 	preGrid->UpdateEdges();
-	preGrid->UpdateCells();
+	preGrid->UpdatePolys();
 	preGrid->UpdateTriangles();
 	CalcFluxes( preGrid, phiTemp, dt );
 	phi->Copy( phiTemp );
@@ -115,7 +114,7 @@ void CDG::Advect( double dt ) {
 void CDG::BasisProjection( int kp, int k, double* Pij ) {
 	int tri_i, quad_i, basis_m, basis_j;
 	Grid* 		grid 		= phi->grid;
-	Cell* 		cell 		= grid->cells[kp];
+	Polygon* 	poly 		= grid->polys[kp];
 	Basis*		basis_k		= phi->basis[k];
 	Basis*		basis_kp	= phi->basis[kp];
 	Triangle* 	tri;
@@ -128,10 +127,10 @@ void CDG::BasisProjection( int kp, int k, double* Pij ) {
 		beta_mj[basis_j] = 0.0;
 	}
 
-	for( tri_i = 0; tri_i < cell->n; tri_i++ ) {
-		tri = cell->tris[tri_i];
+	for( tri_i = 0; tri_i < poly->n; tri_i++ ) {
+		tri = poly->tris[tri_i];
 		for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
-			weight = tri->wi[quad_i]*tri->Area()/cell->Area();
+			weight = tri->wi[quad_i]*tri->Area()/poly->Area();
 			coord = tri->qi[quad_i];
 			for( basis_m = 0; basis_m < nBasis; basis_m++ ) {
 				for( basis_j = 0; basis_j < nBasis; basis_j++ ) {
@@ -145,21 +144,20 @@ void CDG::BasisProjection( int kp, int k, double* Pij ) {
 }
 
 void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
-	int 		cell_i, edge_i, basis_i, tri_i, quad_i;
+	int 		poly_i, edge_i, basis_i, tri_i, quad_i;
 	Grid*		grid	= phi->grid;
-	Polygon 	*prePoly, *intPoly;
-	Cell		*incPoly;
+	Polygon 	*prePoly, *intPoly, *incPoly;
 	Triangle*	tri;
 	int			pinds[6], into, from;
 	double 		weight, tracer, basis_into, basis_from;
 	double**	flux, qf[2];
 	int			nBasis	= phi->basis[0]->nFuncs;
 
-	flux = new double*[grid->nCells];
-	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
-		flux[cell_i] = new double[nBasis];
+	flux = new double*[grid->nPolys];
+	for( poly_i = 0; poly_i < grid->nPolys; poly_i++ ) {
+		flux[poly_i] = new double[nBasis];
 		for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
-			flux[cell_i][basis_i] = 0.0;
+			flux[poly_i][basis_i] = 0.0;
 		}
 	}
 
@@ -169,9 +167,9 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 			continue;
 		}
 
-        for( cell_i = 0; cell_i < 6; cell_i++ ) {
-			from = pinds[cell_i];
-			incPoly = grid->cells[from];
+        for( poly_i = 0; poly_i < 6; poly_i++ ) {
+			from = pinds[poly_i];
+			incPoly = grid->polys[from];
 			intPoly = Intersection( prePoly, incPoly );
 
 			if( intPoly ) {
@@ -195,34 +193,34 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
         delete prePoly;
 	}
 
-	/* add rhs contributions from previous cell */
-	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
-		for( tri_i = 0; tri_i < grid->cells[cell_i]->n; tri_i++ ) {
-			tri = grid->cells[cell_i]->tris[tri_i];
+	/* add rhs contributions from previous poly */
+	for( poly_i = 0; poly_i < grid->nPolys; poly_i++ ) {
+		for( tri_i = 0; tri_i < grid->polys[poly_i]->n; tri_i++ ) {
+			tri = grid->polys[poly_i]->tris[tri_i];
 			for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
 				TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
-				weight = tri->wi[quad_i]*tri->Area()/grid->cells[cell_i]->Area();
+				weight = tri->wi[quad_i]*tri->Area()/grid->polys[poly_i]->Area();
 				tracer = phi->EvalAtCoord( tri->qi[quad_i] );
 				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
-					basis_into = phi->basis[cell_i]->EvalIJ( qf, basis_i );
-					flux[cell_i][basis_i] += weight*tracer*basis_into;
+					basis_into = phi->basis[poly_i]->EvalIJ( qf, basis_i );
+					flux[poly_i][basis_i] += weight*tracer*basis_into;
 				}
 			}
 		}
 
-		/* update the cell coefficients */
-		AXEB( betaInv_ij[cell_i], flux[cell_i], phiTemp->basis[cell_i]->ci, nBasis );
+		/* update the poly coefficients */
+		AXEB( betaInv_ij[poly_i], flux[poly_i], phiTemp->basis[poly_i]->ci, nBasis );
 	}
 
 	if( phiTemp->basis[0]->order == 2 ) {
-		Limiter_FirstOrder( phiTemp );
+		;//Limiter_FirstOrder( phiTemp );
 	}
 	if( phiTemp->basis[0]->order > 2 ) {
 		Limiter_SecondOrder( phiTemp );
 	}
 
-	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
-		delete[] flux[cell_i];
+	for( poly_i = 0; poly_i < grid->nPolys; poly_i++ ) {
+		delete[] flux[poly_i];
 	}
 	delete[] flux;
 }
@@ -231,16 +229,16 @@ void CDG::Limiter_FirstOrder( Field* phiTemp ) {
 	Grid*	grid	= phi->grid;
 	Basis*	basis;
 	int		nx, ny;
-	int		cell_i, basis_i;
+	int		poly_i, basis_i;
 	double	alpha, dxTmp, dyTmp;
 
-	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
-		basis = phiTemp->basis[cell_i];
-		nx = cell_i%grid->nx;
-		ny = cell_i/grid->nx;
+	for( poly_i = 0; poly_i < grid->nPolys; poly_i++ ) {
+		basis = phiTemp->basis[poly_i];
+		nx = poly_i%grid->nx;
+		ny = poly_i/grid->nx;
 
 		if( nx > 0 && nx < grid->nx - 1 && ny > 0 && ny < grid->ny - 1 ) {
-			alpha = CellLimiter( phiTemp, cell_i );
+			alpha = PolyLimiter( phiTemp, poly_i );
 
 			if( fabs( alpha ) > 1.0 - 1.0e-4 ) {
 				continue;
@@ -262,18 +260,18 @@ void CDG::Limiter_SecondOrder( Field* phiTemp ) {
 	Grid*	grid	= phi->grid;
 	Basis*	basis;
 	int		nx, ny;
-	int		cell_i, basis_i;
+	int		poly_i, basis_i;
 	double	alpha_1, alpha_x, alpha_y, alpha_2, dxTmp, dyTmp, dxxTmp, dyyTmp, dxyTmp;
 
-	for( cell_i = 0; cell_i < grid->nCells; cell_i++ ) {
-		basis = phiTemp->basis[cell_i];
-		nx = cell_i%grid->nx;
-		ny = cell_i/grid->nx;
+	for( poly_i = 0; poly_i < grid->nPolys; poly_i++ ) {
+		basis = phiTemp->basis[poly_i];
+		nx = poly_i%grid->nx;
+		ny = poly_i/grid->nx;
 
 		if( nx > 0 && nx < grid->nx - 1 && ny > 0 && ny < grid->ny - 1 ) {
-			alpha_1 = CellLimiter( phiTemp, cell_i );
-			alpha_x = CellSecondLimiter( phiTemp, cell_i, 0 );
-			alpha_y = CellSecondLimiter( phiTemp, cell_i, 1 );
+			alpha_1 = PolyLimiter( phiTemp, poly_i );
+			alpha_x = PolySecondLimiter( phiTemp, poly_i, 0 );
+			alpha_y = PolySecondLimiter( phiTemp, poly_i, 1 );
 
 			alpha_2 = ( alpha_x < alpha_y ) ? alpha_x : alpha_y;
 			alpha_1 = ( alpha_1 > alpha_2 ) ? alpha_1 : alpha_2;
@@ -300,21 +298,21 @@ void CDG::Limiter_SecondOrder( Field* phiTemp ) {
 	}
 }
 
-double CDG::CellLimiter( Field* phiTemp, int cell_i ) {
+double CDG::PolyLimiter( Field* phiTemp, int poly_i ) {
 	Grid*		grid			= phi->grid;
-	Polygon* 	poly 			= grid->cells[cell_i];
-	Basis*		basis 			= phiTemp->basis[cell_i];
+	Polygon* 	poly 			= grid->polys[poly_i];
+	Basis*		basis 			= phiTemp->basis[poly_i];
 	int			vinds[4];
-	int			nx				= cell_i%grid->nx;
-	int			ny				= cell_i/grid->nx;
+	int			nx				= poly_i%grid->nx;
+	int			ny				= poly_i/grid->nx;
 	int			vi, ci, cj;
 	double		maxPhiAtVert	= -1.0e+99;
 	double		minPhiAtVert	= +1.0e+99;
-	double		maxPhiInCell	= -1.0e+99;
-	double		minPhiInCell	= +1.0e+99;
-	double		phiAtVert, phiInCell, alpha, gamma;
+	double		maxPhiInPoly	= -1.0e+99;
+	double		minPhiInPoly	= +1.0e+99;
+	double		phiAtVert, phiInPoly, alpha, gamma;
 
-	grid->GetCellVertInds( cell_i, vinds );
+	grid->GetPolyVertInds( poly_i, vinds );
 
 	for( vi = 0; vi < poly->n; vi++ ) {
 		phiAtVert = basis->EvalFull( poly->verts[vi] ) - basis->ci[0];
@@ -326,20 +324,20 @@ double CDG::CellLimiter( Field* phiTemp, int cell_i ) {
 			if( ci == nx && cj == ny ) {
 				continue;
 			}
-			phiInCell = phiTemp->basis[cj*grid->nx+ci]->ci[0] - basis->ci[0];
-			minPhiInCell = ( phiInCell < minPhiInCell ) ? phiInCell : minPhiInCell;
-			maxPhiInCell = ( phiInCell > maxPhiInCell ) ? phiInCell : maxPhiInCell;
+			phiInPoly = phiTemp->basis[cj*grid->nx+ci]->ci[0] - basis->ci[0];
+			minPhiInPoly = ( phiInPoly < minPhiInPoly ) ? phiInPoly : minPhiInPoly;
+			maxPhiInPoly = ( phiInPoly > maxPhiInPoly ) ? phiInPoly : maxPhiInPoly;
 		}
 	}
 
 	alpha = 1.0;
 	if( fabs( minPhiAtVert ) > 1.0e-6 ) {
-		alpha = minPhiInCell/minPhiAtVert > 0.0 ? minPhiInCell/minPhiAtVert : 0.0;
+		alpha = minPhiInPoly/minPhiAtVert > 0.0 ? minPhiInPoly/minPhiAtVert : 0.0;
 	}
 
 	gamma = 1.0;
 	if( fabs( maxPhiAtVert ) > 1.0e-6 ) {
-		gamma = maxPhiInCell/maxPhiAtVert > 0.0 ? maxPhiInCell/maxPhiAtVert : 0.0;
+		gamma = maxPhiInPoly/maxPhiAtVert > 0.0 ? maxPhiInPoly/maxPhiAtVert : 0.0;
 	}
 
 	alpha = ( alpha < gamma ) ? alpha : gamma;
@@ -348,22 +346,22 @@ double CDG::CellLimiter( Field* phiTemp, int cell_i ) {
 	return alpha;
 }
 
-double CDG::CellSecondLimiter( Field* phiTemp, int cell_i, int dim ) {
+double CDG::PolySecondLimiter( Field* phiTemp, int poly_i, int dim ) {
 	Grid*		grid			= phi->grid;
-	Polygon* 	poly 			= grid->cells[cell_i];
-	Basis*		basis 			= phiTemp->basis[cell_i];
+	Polygon* 	poly 			= grid->polys[poly_i];
+	Basis*		basis 			= phiTemp->basis[poly_i];
 	int			vinds[4];
-	int			nx				= cell_i%grid->nx;
-	int			ny				= cell_i/grid->nx;
+	int			nx				= poly_i%grid->nx;
+	int			ny				= poly_i/grid->nx;
 	int			vi, ci, cj, co;
 	double		maxDPhiAtVert	= -1.0e+99;
 	double		minDPhiAtVert	= +1.0e+99;
-	double		maxDPhiInCell	= -1.0e+99;
-	double		minDPhiInCell	= +1.0e+99;
-	double		dPhiAtVert, dPhiInCell;
+	double		maxDPhiInPoly	= -1.0e+99;
+	double		minDPhiInPoly	= +1.0e+99;
+	double		dPhiAtVert, dPhiInPoly;
 	double 		alpha, gamma;
 
-	grid->GetCellVertInds( cell_i, vinds );
+	grid->GetPolyVertInds( poly_i, vinds );
 
 	for( vi = 0; vi < poly->n; vi++ ) {
 		dPhiAtVert = basis->EvalDerivFull( poly->verts[vi], dim );
@@ -376,20 +374,20 @@ double CDG::CellSecondLimiter( Field* phiTemp, int cell_i, int dim ) {
 				continue;
 			}
 			co = cj*grid->nx + ci;
-			dPhiInCell = phiTemp->basis[co]->EvalDerivFull( grid->cells[co]->origin, dim );
-			minDPhiInCell = ( dPhiInCell < minDPhiInCell ) ? dPhiInCell : minDPhiInCell;
-			maxDPhiInCell = ( dPhiInCell > maxDPhiInCell ) ? dPhiInCell : maxDPhiInCell;
+			dPhiInPoly = phiTemp->basis[co]->EvalDerivFull( grid->polys[co]->origin, dim );
+			minDPhiInPoly = ( dPhiInPoly < minDPhiInPoly ) ? dPhiInPoly : minDPhiInPoly;
+			maxDPhiInPoly = ( dPhiInPoly > maxDPhiInPoly ) ? dPhiInPoly : maxDPhiInPoly;
 		}
 	}
 
 	alpha = 1.0;
 	if( fabs( minDPhiAtVert ) > 1.0e-6 ) {
-		alpha = minDPhiInCell/minDPhiAtVert > 0.0 ? minDPhiInCell/minDPhiAtVert : 0.0;
+		alpha = minDPhiInPoly/minDPhiAtVert > 0.0 ? minDPhiInPoly/minDPhiAtVert : 0.0;
 	}
 
 	gamma = 1.0;
 	if( fabs( maxDPhiAtVert ) > 1.0e-6 ) {
-		gamma = maxDPhiInCell/maxDPhiAtVert > 0.0 ? maxDPhiInCell/maxDPhiAtVert : 0.0;
+		gamma = maxDPhiInPoly/maxDPhiAtVert > 0.0 ? maxDPhiInPoly/maxDPhiAtVert : 0.0;
 	}
 
 	alpha = ( alpha < gamma ) ? alpha : gamma;

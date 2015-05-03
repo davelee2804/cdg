@@ -6,7 +6,6 @@
 #include "Edge.h"
 #include "Triangle.h"
 #include "Polygon.h"
-#include "Cell.h"
 #include "Grid.h"
 #include "Basis.h"
 #include "Field.h"
@@ -18,23 +17,23 @@ Field::Field( Grid* _grid ) {
 
 	grid = _grid;
 
-	basis = new Basis*[grid->nCells];
-	for( i = 0; i < grid->nCells; i++ ) {
-		basis[i] = new Basis( grid->cells[i], grid->basisOrder, grid->cells[i]->origin, grid->dx, grid->dy );
+	basis = new Basis*[grid->nPolys];
+	for( i = 0; i < grid->nPolys; i++ ) {
+		basis[i] = new Basis( grid->polys[i], grid->basisOrder, grid->polys[i]->origin, grid->dx, grid->dy );
 	}
 }
 
 Field::~Field() {
 	int i;
 
-	for( i = 0; i < grid->nCells; i++ ) {
+	for( i = 0; i < grid->nPolys; i++ ) {
 		delete basis[i];
 	}
 	delete[] basis;
 }
 
 double Field::EvalAtCoord( double* x ) {
-	int pi = grid->GetCellIndex( x );
+	int pi = grid->GetPolyIndex( x );
 
 	return basis[pi]->EvalFull( x ); 
 }
@@ -66,12 +65,12 @@ void Field::LinearInterp( double* x, double* v ) {
 	}
 }
 
-/* integrate assuming constant values for each cell */
+/* integrate assuming constant values for each poly */
 double Field::IntegrateConstant() {
 	int i;
 	double vol = 0;
 
-	for( i = 0; i < grid->nCells; i++ ) {
+	for( i = 0; i < grid->nPolys; i++ ) {
 		vol += basis[i]->ci[0]*grid->dx*grid->dy;
 	}
 	return vol;
@@ -80,13 +79,13 @@ double Field::IntegrateConstant() {
 double Field::Integrate() {
 	int i, j, k;
 	double val, vol = 0;
-	Cell* cell;
+	Polygon* poly;
 	Triangle* tri;
 
-	for( i = 0; i < grid->nCells; i++ ) {
-		cell = grid->cells[i];
-		for( j = 0; j < cell->n; j++ ) {
-			tri = cell->tris[j];
+	for( i = 0; i < grid->nPolys; i++ ) {
+		poly = grid->polys[i];
+		for( j = 0; j < poly->n; j++ ) {
+			tri = poly->tris[j];
 			for( k = 0; k < tri->nQuadPts; k++ ) {
 				val = basis[i]->EvalFull( tri->qi[k] );
 				vol += val*tri->wi[k]*tri->Area();
@@ -99,19 +98,19 @@ double Field::Integrate() {
 void Field::Copy( Field* field ) {
 	int i, j;
 
-	for( i = 0; i < grid->nCells; i++ ) {
-		for( j = 0; j < grid->cells[i]->nc; j++ ) {
+	for( i = 0; i < grid->nPolys; i++ ) {
+		for( j = 0; j < basis[i]->nFuncs; j++ ) {
 			basis[i]->ci[j] = field->basis[i]->ci[j];
 		}
 	}
 }
 
-void Field::Write( string fname, int tstep ) {
-	ofstream file;
-	char filename[80];
-	int i, j, k, l;
-	Cell* cell;
-	Basis* basis_i;
+void Field::Write( string fname, int tstep, int n ) {
+	ofstream 	file;
+	char 		filename[80];
+	int 		i, j, k, l;
+	Basis* 		basis_i;
+	double		point[2];
 
 	sprintf( filename, "output/%s.%.4u.txt", fname.c_str(), tstep );
 	file.open( filename );
@@ -119,9 +118,16 @@ void Field::Write( string fname, int tstep ) {
 		for( j = 0; j < grid->basisOrder; j++ ) {
 			for( k = 0; k < grid->nx; k++ ) {
 				for( l = 0; l < grid->basisOrder; l++ ) {
-					cell = grid->cells[i*grid->nx+k];
 					basis_i = basis[i*grid->nx+k];
-					file << basis_i->EvalFull( cell->coords[j*grid->basisOrder+l] ) << endl;
+					if( grid->internal ) {
+						point[0] = grid->minx + k*grid->dx + (0.5 + l)*grid->dx/n;
+						point[1] = grid->miny + i*grid->dy + (0.5 + j)*grid->dy/n;
+					}
+					else {
+						point[0] = grid->minx + k*grid->dx + l*grid->dx/(n-1);
+						point[1] = grid->miny + i*grid->dy + j*grid->dy/(n-1);
+					}
+					file << basis_i->EvalFull( point ) << endl;
 				}
 			}
 		}

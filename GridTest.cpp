@@ -5,7 +5,6 @@
 #include "Edge.h"
 #include "Triangle.h"
 #include "Polygon.h"
-#include "Cell.h"
 #include "Grid.h"
 
 using namespace std;
@@ -32,8 +31,8 @@ int main() {
 	Grid*		grid		= new Grid( nx, ny, minx, miny, maxx, maxy, QUAD_ORDER, BASIS_ORDER, false );
 	double		point[2]	= { 0.0, 0.0 };
 	Polygon*	testPoly	= NULL;
-	Cell*		testPoly2	= NULL;
-	Cell*		testPoly3	= NULL;
+	Polygon*	testPoly2	= NULL;
+	Polygon*	testPoly3	= NULL;
 	int			i, j;
 	bool		hasEdge;
 
@@ -43,11 +42,11 @@ int main() {
 
 		//point->Print();
 
-		testPoly = grid->FindCell( point );
+		testPoly = grid->FindPoly( point );
 	}
 
-	for( i = 0; i < grid->nCells; i++ ) {
-		testPoly = grid->cells[i];
+	for( i = 0; i < grid->nPolys; i++ ) {
+		testPoly = grid->polys[i];
 		if( !PointDiff( testPoly->verts[0], testPoly->edges[0]->v1, 0.001 ) ) {
 			cout << "ERROR [0]" << endl;
 		}
@@ -76,7 +75,7 @@ int main() {
 
 	for( i = 0; i < grid->nEdges; i++ ) {
 		testPoly2 = testPoly3 = NULL;
-		grid->GetEdgeCells( i, testPoly2, testPoly3 );
+		grid->GetEdgePolys( i, testPoly2, testPoly3 );
 		if( testPoly2 && testPoly3 ) {
 			hasEdge = false;
 			for( j = 0; j < 4; j++ )

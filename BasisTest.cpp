@@ -5,7 +5,6 @@
 #include "Edge.h"
 #include "Triangle.h"
 #include "Polygon.h"
-#include "Cell.h"
 #include "Basis.h"
 #include "Grid.h"
 #include "Field.h"
@@ -40,7 +39,7 @@ int main() {
 	int			i, j, k, l;
 	Grid*		grid;
 	Field*		field;
-	Cell* 		cell;
+	Polygon* 	poly;
 	Polygon*	poly;
 	Triangle*	tri;
 	Basis*		basis;
@@ -106,7 +105,7 @@ int main() {
 			for( l = 0; l < tri->nQuadPts; l++ ) {
 				weight = tri->wi[l]*tri->Area()/poly->Area();
 				coord = tri->qi[l];
-				/* basis initially set as the spatial values at the cell coordinates */
+				/* basis initially set as the spatial values at the poly coordinates */
 				fj[j] += weight*basis->EvalIJ( coord, j )*func( coord );
 			}
 		}
@@ -143,16 +142,16 @@ int main() {
 		cdg = new CDG( field, velx, vely );
 		cdg->InitBetaIJInv( func );
 
-		beta_ij_2 = new double[grid->cells[0]->nc*grid->cells[0]->nc];
-		cj = new double[grid->cells[0]->nc];
+		beta_ij_2 = new double[grid->polys[0]->nc*grid->polys[0]->nc];
+		cj = new double[grid->polys[0]->nc];
 
-		for( j = 0; j < grid->nCells; j++ ) {
-			cell = grid->cells[j];
+		for( j = 0; j < grid->nPolys; j++ ) {
+			poly = grid->polys[j];
 			basis = field->basis[j];
 
-			MatInv( cdg->betaInv_ij[j], beta_ij_2, cell->nc );
-			AXEB( beta_ij_2, basis->ci, cj, cell->nc );
-			for( k = 0; k < cell->nc; k++ ) {
+			MatInv( cdg->betaInv_ij[j], beta_ij_2, poly->nc );
+			AXEB( beta_ij_2, basis->ci, cj, poly->nc );
+			for( k = 0; k < poly->nc; k++ ) {
 				basis->ci[k] = cj[k];
 			}
 		}

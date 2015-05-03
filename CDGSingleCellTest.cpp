@@ -5,7 +5,6 @@
 #include "Edge.h"
 #include "Triangle.h"
 #include "Polygon.h"
-#include "Cell.h"
 #include "Grid.h"
 #include "Basis.h"
 #include "Field.h"
@@ -38,18 +37,18 @@ int main() {
 
 	cdg->InitBetaIJInv( p0 );
 
-	for( i = 0; i < vgrid->nCells; i++ ) {
-		for( j = 0; j < vgrid->cells[j]->nc; j++ ) {
+	for( i = 0; i < vgrid->nPolys; i++ ) {
+		for( j = 0; j < vgrid->polys[j]->nc; j++ ) {
 			velx->basis[i]->ci[j] = +1.0;
 			vely->basis[i]->ci[j] = +1.0;
 		}
 	}
 
-	vgrid->Write( "vgrid" );
-	pgrid->Write( "pgrid" );
-	velx->Write( "velx", 0 );
-	vely->Write( "vely", 0 );
-	phi->Write( "phi", 0 );
+	vgrid->Write( "vgrid", 2 );
+	pgrid->Write( "pgrid", 2 );
+	velx->Write( "velx", 0, 2 );
+	vely->Write( "vely", 0, 2 );
+	phi->Write( "phi", 0, 2 );
 
 	for( i = 1; i <= 12; i++ ) {
 		cout << "time step: " << i << endl;

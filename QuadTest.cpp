@@ -5,7 +5,6 @@
 #include "Edge.h"
 #include "Triangle.h"
 #include "Polygon.h"
-#include "Cell.h"
 #include "Basis.h"
 #include "Grid.h"
 #include "Field.h"
@@ -25,13 +24,13 @@ double Integrate( Field* field, Func* func ) {
     double      vol		= 0.0;
     int         pi, ti, qi;
 	Grid*		grid	= field->grid;
-    Cell*    	cell;
+    Polygon*    poly;
     Triangle*   tri;
 
-    for( pi = 0; pi < grid->nCells; pi++ ) {
-        cell = grid->cells[pi];
-        for( ti = 0; ti < cell->n; ti++ ) {
-            tri = cell->tris[ti];
+    for( pi = 0; pi < grid->nPolys; pi++ ) {
+        poly = grid->polys[pi];
+        for( ti = 0; ti < poly->n; ti++ ) {
+            tri = poly->tris[ti];
             for( qi = 0; qi < tri->nQuadPts; qi++ ) {
                 vol += tri->wi[qi]*func( tri->qi[qi] )*tri->Area();
             }
@@ -53,8 +52,8 @@ int main() {
 		grid = new Grid( nx, ny, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
 		field = new Field( grid );
 
-		for( j = 0; j < grid->nCells; j++ ) {
-			field->basis[j]->ci[0] = func( grid->cells[j]->origin );
+		for( j = 0; j < grid->nPolys; j++ ) {
+			field->basis[j]->ci[0] = func( grid->polys[j]->origin );
 		}
 
 		vol = Integrate( field, func );
