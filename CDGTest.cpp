@@ -11,6 +11,7 @@
 #include "CFA.h"
 #include "LinAlg.h"
 #include "CDG.h"
+#include "Limiter.h"
 
 using namespace std;
 
@@ -62,6 +63,7 @@ int main() {
 	double		norm	= 0.0;
 	double		val_n, val_a;
 	double		coord[2];
+	Limiter*	lim		= new Limiter( phi );
 
 	for( i = 0; i < vgrid->nPolys; i++ ) {
 		for( j = 0; j < 4; j++ ) {
@@ -93,6 +95,7 @@ int main() {
 	for( i = 1; i <= nsteps; i++ ) {
 		cout << "time step: " << i;
 		cdg->Advect( dt );
+		lim->Apply();
 		cout << "\t...done, volume: " << phi->Integrate() << endl;
 		if( i%dump == 0 ) {
 			phi->Write( "phi", i, 2 );

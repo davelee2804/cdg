@@ -1,5 +1,6 @@
 OBJS = CDG.o \
        CFA.o \
+       Limiter.o \
        Field.o \
        Basis.o \
        Grid.o \
@@ -13,7 +14,7 @@ CC = g++
 
 cdgTest: CDGTest.o ${OBJS}
 	${CC} -o cdgTest CDGTest.o ${OBJS} ${FLAGS}
-CDGTest.o: CDG.cpp CDG.o LinAlg.o CFA.o Field.o Grid.o Polygon.o Basis.o Triangle.o Edge.o
+CDGTest.o: CDG.cpp Limiter.o CDG.o LinAlg.o CFA.o Field.o Grid.o Polygon.o Basis.o Triangle.o Edge.o
 	${CC} -c CDGTest.cpp ${FLAGS}
 
 cfaTest: CFATest.o ${OBJS}
@@ -60,6 +61,8 @@ CDG.o: CDG.cpp CDG.h LinAlg.o CFA.o Field.o Basis.o Grid.o Polygon.o Triangle.o 
 	${CC} -I ./core/ -c CDG.cpp ${FLAGS}
 CFA.o: CFA.cpp CFA.h Field.o Basis.o Grid.o Polygon.o Basis.o Triangle.o Edge.o
 	${CC} -I ./core/ -c CFA.cpp ${FLAGS}
+Limiter.o: Limiter.cpp Limiter.h Field.o Basis.o Grid.o Polygon.o Triangle.o Edge.o
+	${CC} -c Limiter.cpp ${FLAGS}
 Field.o: Field.cpp Field.h Basis.o Grid.o Polygon.o Basis.o Triangle.o Edge.o
 	${CC} -c Field.cpp ${FLAGS}
 Basis.o: Basis.cpp Basis.h Polygon.o Triangle.o Edge.o
