@@ -42,20 +42,20 @@ void Limiter::Apply() {
 
 		basis = phi->basis[pi];
 		if( order == 1 && alpha_o < 1.0 - 1.0e-6 ) {
-			dx = basis->ci[1];
-			dy = basis->ci[basis->order];
+			dx = alpha_o*basis->ci[1];
+			dy = alpha_o*basis->ci[basis->order];
 			for( bi = 1; bi < basis->nFuncs; bi++ ) {
 				basis->ci[bi] = 0.0;
 			}
-			basis->ci[1] = dx;
+			basis->ci[1]            = dx;
 			basis->ci[basis->order] = dy;
 		}
 		if( order == 2 && ( alpha_o < 1.0 - 1.0e-6 || alpha_x < 1.0 - 1.0e-6 ) ) {
-			dx  = basis->ci[1];
-			dy  = basis->ci[basis->order];
-			dxx = basis->ci[2];
-			dyy = basis->ci[2*basis->order];
-			dxy = basis->ci[basis->order+1];
+			dx  = alpha_o*basis->ci[1];
+			dy  = alpha_o*basis->ci[basis->order];
+			dxx = alpha_x*basis->ci[2];
+			dyy = alpha_x*basis->ci[2*basis->order];
+			dxy = alpha_x*basis->ci[basis->order+1];
 			for( bi = 1; bi < basis->nFuncs; bi++ ) {
 				basis->ci[bi] = 0.0;
 			}
