@@ -25,4 +25,7 @@ m=np.linalg.lstsq(y,le)[0]
 print m
 
 plt.loglog( dx, err, '-o' )
-plt.show()
+#plt.show()
+plt.xlabel( '$\Delta x$' )
+plt.ylabel( '$L_1 error$' )
+plt.savefig( 'convergence_error.png' )

@@ -83,12 +83,12 @@ int main() {
 	cdg = new CDG( phi, velx, vely );
 	cdg->InitBetaIJInv( p0 );
 
-	pgrid->Write( "pgrid", 2 );
+	pgrid->Write( "pgrid", BASIS_ORDER );
 	vgrid->Write( "vgrid", 2 );
 	velx->Write( "velx", 0, 2 );
 	vely->Write( "vely", 0, 2 );
-	ans->Write( "ans", 0, 2 );
-	phi->Write( "phi", 0, 2 );
+	ans->Write( "ans", 0, BASIS_ORDER );
+	phi->Write( "phi", 0, BASIS_ORDER );
 
 	cout << "volume: " << phi->Integrate() << endl;
 
@@ -98,7 +98,7 @@ int main() {
 		lim->Apply();
 		cout << "\t...done, volume: " << phi->Integrate() << endl;
 		if( i%dump == 0 ) {
-			phi->Write( "phi", i, 2 );
+			phi->Write( "phi", i, BASIS_ORDER );
 		}
 	}
 

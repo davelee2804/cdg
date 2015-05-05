@@ -80,7 +80,7 @@ double Limiter::FirstOrder( int pi ) {
 	double		phiMax	= -1.0e+99;
 	double		alpha	= 1.0;
 	double		alpha_i;
-	double		phiVert, ratio;
+	double		phiOrig, phiVert, ratio;
 
 	if( nx == 0 || nx == grid->nx - 1 || ny == 0 || ny == grid->ny - 1 ) {
 		return alpha;
@@ -89,29 +89,25 @@ double Limiter::FirstOrder( int pi ) {
 	for( cj = ny - 1; cj < ny + 2; cj++ ) {
 		for( ci = nx - 1; ci < nx + 2; ci++ ) {
 			co = cj*grid->nx + ci;
-			if( phi->basis[co]->ci[0] > phiMax ) {
-				phiMax = phi->basis[co]->ci[0];
-			}
-			if( phi->basis[co]->ci[0] < phiMin ) {
-				phiMin = phi->basis[co]->ci[0];
-			}
+			phiOrig = phi->basis[co]->ci[0];
+			phiMax = ( phiOrig > phiMax ) ? phiOrig : phiMax;
+			phiMin = ( phiOrig < phiMin ) ? phiOrig : phiMin;
 		}
 	}
 
 	grid->GetPolyVertInds( pi, vinds );
 
+	phiOrig = basis->ci[0];
 	for( vi = 0; vi < 4; vi++ ) {
 		phiVert = basis->EvalFull( poly->verts[vi] );
-		if( phiVert > basis->ci[0] + 1.0e-6 ) {
-			ratio = (phiMax - basis->ci[0])/(phiVert - basis->ci[0]);
+		alpha_i = 1.0;
+		if( phiVert > phiOrig + 1.0e-6 ) {
+			ratio = (phiMax - phiOrig)/(phiVert - phiOrig);
 			alpha_i = ( 1.0 < ratio ) ? 1.0 : ratio;
 		}
-		else if( phiVert < basis->ci[0] - 1.0e-6 ) {
-			ratio = (phiMin - basis->ci[0])/(phiVert - basis->ci[0]);
+		else if( phiVert < phiOrig - 1.0e-6 ) {
+			ratio = (phiMin - phiOrig)/(phiVert - phiOrig);
 			alpha_i = ( 1.0 < ratio ) ? 1.0 : ratio;
-		}
-		else {
-			alpha_i = 1.0;
 		}
 		alpha = ( alpha_i < alpha ) ? alpha_i : alpha;
 	}
@@ -120,51 +116,48 @@ double Limiter::FirstOrder( int pi ) {
 }
 
 double Limiter::SecondOrder( int pi, int dim ) {
-	Grid*       grid            = phi->grid;
-	Polygon*    poly            = grid->polys[pi];
-	Basis*      basis           = phi->basis[pi];
-	int         vinds[4];
-	int         nx              = pi%grid->nx;
-	int         ny              = pi/grid->nx;
-	int         vi, ci, cj, co;
-	double      maxDPhiAtVert   = -1.0e+99;
-	double      minDPhiAtVert   = +1.0e+99;
-	double      maxDPhiInPoly   = -1.0e+99;
-	double      minDPhiInPoly   = +1.0e+99;
-	double      dPhiAtVert, dPhiInPoly;
-	double      alpha, gamma;
+	Grid* 		grid 	= phi->grid;
+	Polygon*	poly	= grid->polys[pi];
+	Basis*		basis	= phi->basis[pi];
+	int 		vinds[4];
+	int			nx		= pi%grid->nx;
+	int			ny		= pi/grid->nx;
+	int			ci, cj, co, vi;
+	double		dPhiMin	= +1.0e+99;
+	double		dPhiMax	= -1.0e+99;
+	double		alpha	= 1.0;
+	double		alpha_i;
+	double		dPhi, dPhiVert, ratio;
 
-	grid->GetPolyVertInds( pi, vinds );
-
-	for( vi = 0; vi < poly->n; vi++ ) {
-		dPhiAtVert = basis->EvalDerivFull( poly->verts[vi], dim );
-		minDPhiAtVert = ( dPhiAtVert < minDPhiAtVert ) ? dPhiAtVert : minDPhiAtVert;
-		maxDPhiAtVert = ( dPhiAtVert > maxDPhiAtVert ) ? dPhiAtVert : maxDPhiAtVert;
+	if( nx == 0 || nx == grid->nx - 1 || ny == 0 || ny == grid->ny - 1 ) {
+		return alpha;
 	}
+
 	for( cj = ny - 1; cj < ny + 2; cj++ ) {
 		for( ci = nx - 1; ci < nx + 2; ci++ ) {
-			if( ci == nx && cj == ny ) {
-				continue;
-			}
 			co = cj*grid->nx + ci;
-			dPhiInPoly = phi->basis[co]->EvalDerivFull( grid->polys[co]->origin, dim );
-			minDPhiInPoly = ( dPhiInPoly < minDPhiInPoly ) ? dPhiInPoly : minDPhiInPoly;
-			maxDPhiInPoly = ( dPhiInPoly > maxDPhiInPoly ) ? dPhiInPoly : maxDPhiInPoly;
+			dPhi = phi->basis[co]->EvalDerivFull( grid->polys[co]->origin, dim );
+			dPhiMax = ( dPhi > dPhiMax ) ? dPhi : dPhiMax;
+			dPhiMin = ( dPhi < dPhiMin ) ? dPhi : dPhiMin;
 		}
 	}
 
-	alpha = 1.0;
-	if( fabs( minDPhiAtVert ) > 1.0e-6 ) {
-		alpha = minDPhiInPoly/minDPhiAtVert > 0.0 ? minDPhiInPoly/minDPhiAtVert : 0.0;
-	}
+	grid->GetPolyVertInds( pi, vinds );
 
-	gamma = 1.0;
-	if( fabs( maxDPhiAtVert ) > 1.0e-6 ) {
-		gamma = maxDPhiInPoly/maxDPhiAtVert > 0.0 ? maxDPhiInPoly/maxDPhiAtVert : 0.0;
+	dPhi = basis->EvalDerivFull( poly->origin, dim );
+	for( vi = 0; vi < 4; vi++ ) {
+		dPhiVert = basis->EvalDerivFull( poly->verts[vi], dim );
+		alpha_i = 1.0;
+		if( dPhiVert > dPhi + 1.0e-6 ) {
+			ratio = (dPhiMax - dPhi)/(dPhiVert - dPhi);
+			alpha_i = ( 1.0 < ratio ) ? 1.0 : ratio;
+		}
+		else if( dPhiVert < dPhi - 1.0e-6 ) {
+			ratio = (dPhiMin - dPhi)/(dPhiVert - dPhi);
+			alpha_i = ( 1.0 < ratio ) ? 1.0 : ratio;
+		}
+		alpha = ( alpha_i < alpha ) ? alpha_i : alpha;
 	}
-
-	alpha = ( alpha < gamma ) ? alpha : gamma;
-	alpha = ( alpha < 1.0 )   ? alpha : 1.0;
 
 	return alpha;
 }
