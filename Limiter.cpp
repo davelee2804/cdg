@@ -75,6 +75,10 @@ double Limiter::FirstOrder( int pi ) {
 	int 		vinds[4];
 	int			nx		= pi%grid->nx;
 	int			ny		= pi/grid->nx;
+	int			xmin	= ( nx > 0 ) ? nx - 1  : nx;
+	int			ymin	= ( ny > 0 ) ? ny - 1  : ny;
+	int			xmax	= ( nx < grid->nx - 1 ) ? nx + 1 : nx;
+	int			ymax	= ( ny < grid->ny - 1 ) ? ny + 1 : ny;
 	int			ci, cj, co, vi;
 	double		phiMin	= +1.0e+99;
 	double		phiMax	= -1.0e+99;
@@ -82,12 +86,8 @@ double Limiter::FirstOrder( int pi ) {
 	double		alpha_i;
 	double		phiOrig, phiVert, ratio;
 
-	if( nx == 0 || nx == grid->nx - 1 || ny == 0 || ny == grid->ny - 1 ) {
-		return alpha;
-	}
-
-	for( cj = ny - 1; cj < ny + 2; cj++ ) {
-		for( ci = nx - 1; ci < nx + 2; ci++ ) {
+	for( cj = ymin; cj <= ymax; cj++ ) {
+		for( ci = xmin; ci <= xmax; ci++ ) {
 			co = cj*grid->nx + ci;
 			phiOrig = phi->basis[co]->ci[0];
 			phiMax = ( phiOrig > phiMax ) ? phiOrig : phiMax;
@@ -122,6 +122,10 @@ double Limiter::SecondOrder( int pi, int dim ) {
 	int 		vinds[4];
 	int			nx		= pi%grid->nx;
 	int			ny		= pi/grid->nx;
+	int			xmin	= ( nx > 0 ) ? nx - 1  : nx;
+	int			ymin	= ( ny > 0 ) ? ny - 1  : ny;
+	int			xmax	= ( nx < grid->nx - 1 ) ? nx + 1 : nx;
+	int			ymax	= ( ny < grid->ny - 1 ) ? ny + 1 : ny;
 	int			ci, cj, co, vi;
 	double		dPhiMin	= +1.0e+99;
 	double		dPhiMax	= -1.0e+99;
@@ -129,12 +133,8 @@ double Limiter::SecondOrder( int pi, int dim ) {
 	double		alpha_i;
 	double		dPhi, dPhiVert, ratio;
 
-	if( nx == 0 || nx == grid->nx - 1 || ny == 0 || ny == grid->ny - 1 ) {
-		return alpha;
-	}
-
-	for( cj = ny - 1; cj < ny + 2; cj++ ) {
-		for( ci = nx - 1; ci < nx + 2; ci++ ) {
+	for( cj = ymin; cj <= ymax; cj++ ) {
+		for( ci = xmin; ci <= xmax; ci++ ) {
 			co = cj*grid->nx + ci;
 			dPhi = phi->basis[co]->EvalDerivFull( grid->polys[co]->origin, dim );
 			dPhiMax = ( dPhi > dPhiMax ) ? dPhi : dPhiMax;
