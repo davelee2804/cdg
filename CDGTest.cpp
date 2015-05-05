@@ -119,6 +119,7 @@ int main() {
 	cout << "error:      " << err/norm << endl;
 	cout << "mass loss:  " << 1.0 - phi->IntegrateConstant()/ans->IntegrateConstant() << endl;
 
+	delete lim;
 	delete cdg;
 	delete phi;
 	delete velx;
