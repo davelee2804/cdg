@@ -5,6 +5,6 @@ class Limiter {
 		int		order;
 		Field* 	phi;
 		void 	Apply();
-		double 	FirstOrder( int pi );
-		double 	SecondOrder( int pt, int dim );
+		double 	FirstOrder( Field* phiTemp, int pi );
+		double 	SecondOrder( Field* phiTemp, int pt, int dim );
 };

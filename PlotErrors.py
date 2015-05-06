@@ -12,8 +12,14 @@ import matplotlib.pyplot as plt
 #CDG second order (bill's limiter)
 #err=[0.679821,0.498348,0.914343]
 
+#CDG second order (no limiter)
+#err=[0.286685,0.179829,0.178711]
+
 #CDG second order (kuzmin limiter)
-err=[0.286685,0.179829,0.178711]
+err=[0.680037,0.498419,0.914583]
+
+#CDG second order (venkatakrishnan limiter)
+#err=[1.38352,0.706516,0.962705]
 
 dx =[1.0/32,1.0/64,1.0/128]
 

@@ -26,49 +26,62 @@ Limiter::~Limiter() {
 void Limiter::Apply() {
 	int 	pi, bi;
 	double 	alpha_o, alpha_x, alpha_y;
-	double	dx, dy, dxx, dyy, dxy;
-	Basis*	basis;
+	Field*	phiTemp	= NULL;
+	int		xoInd	= 1;
+	int		yoInd	= phi->basis[0]->order;
+	int		xxInd	= 2;
+	int		xyInd	= phi->basis[0]->order + 1;
+	int		yyInd	= 2*phi->basis[0]->order;
 
 	if( !order ) {
 		return;
 	}
 
+	phiTemp = new Field( phi->grid );
+	phiTemp->Copy( phi );
+
 	for( pi = 0; pi < phi->grid->nPolys; pi++ ) {
-		alpha_o = FirstOrder( pi );
-		alpha_x = ( order == 2 ) ? SecondOrder( pi, 0 ) : 0.0;
-		alpha_y = ( order == 2 ) ? SecondOrder( pi, 1 ) : 0.0;
+		alpha_o = FirstOrder( phiTemp, pi );
+		alpha_x = ( order == 2 ) ? SecondOrder( phiTemp, pi, 0 ) : 0.0;
+		alpha_y = ( order == 2 ) ? SecondOrder( phiTemp, pi, 1 ) : 0.0;
 		alpha_x = ( alpha_x < alpha_y ) ? alpha_x : alpha_y;
 		alpha_o = ( alpha_o > alpha_x ) ? alpha_o : alpha_x;
 
-		basis = phi->basis[pi];
 		if( order == 1 && alpha_o < 1.0 - 1.0e-6 ) {
-			dx = alpha_o*basis->ci[1];
-			dy = alpha_o*basis->ci[basis->order];
-			for( bi = 1; bi < basis->nFuncs; bi++ ) {
-				basis->ci[bi] = 0.0;
+			for( bi = 1; bi < phi->basis[pi]->nFuncs; bi++ ) {
+				phiTemp->basis[pi]->ci[bi] = 0.0;
 			}
-			basis->ci[1]            = dx;
-			basis->ci[basis->order] = dy;
+			phiTemp->basis[pi]->ci[xoInd] = alpha_o*phi->basis[pi]->ci[xoInd];
+			phiTemp->basis[pi]->ci[yoInd] = alpha_o*phi->basis[pi]->ci[yoInd];
 		}
 		if( order == 2 && ( alpha_o < 1.0 - 1.0e-6 || alpha_x < 1.0 - 1.0e-6 ) ) {
-			dx  = alpha_o*basis->ci[1];
-			dy  = alpha_o*basis->ci[basis->order];
-			dxx = alpha_x*basis->ci[2];
-			dyy = alpha_x*basis->ci[2*basis->order];
-			dxy = alpha_x*basis->ci[basis->order+1];
-			for( bi = 1; bi < basis->nFuncs; bi++ ) {
-				basis->ci[bi] = 0.0;
+			for( bi = 1; bi < phi->basis[pi]->nFuncs; bi++ ) {
+				phiTemp->basis[pi]->ci[bi] = 0.0;
 			}
-			basis->ci[1]              = dx;
-			basis->ci[basis->order]   = dy;
-			basis->ci[2]              = dxx;
-			basis->ci[2*basis->order] = dyy;
-			basis->ci[basis->order+1] = dxy;
+			phiTemp->basis[pi]->ci[xoInd] = alpha_o*phi->basis[pi]->ci[xoInd];
+			phiTemp->basis[pi]->ci[yoInd] = alpha_o*phi->basis[pi]->ci[yoInd];
+			phiTemp->basis[pi]->ci[xxInd] = alpha_x*phi->basis[pi]->ci[xxInd];
+			phiTemp->basis[pi]->ci[xyInd] = alpha_x*phi->basis[pi]->ci[xyInd];
+			phiTemp->basis[pi]->ci[yyInd] = alpha_x*phi->basis[pi]->ci[yyInd];
 		}
 	}
+
+	phi->Copy( phiTemp );
+	delete phiTemp;
 }
 
-double Limiter::FirstOrder( int pi ) {
+double func1( double r ) {
+	if( r < 1.0 ) {
+		return r;
+	}
+	return 1.0;
+}
+
+double func2( double r ) {
+	return (r*r + 2.0*r)/(r*r + r + 2.0);
+}
+
+double Limiter::FirstOrder( Field* phiTemp, int pi ) {
 	Grid* 		grid 	= phi->grid;
 	Polygon*	poly	= grid->polys[pi];
 	Basis*		basis	= phi->basis[pi];
@@ -89,6 +102,7 @@ double Limiter::FirstOrder( int pi ) {
 	for( cj = ymin; cj <= ymax; cj++ ) {
 		for( ci = xmin; ci <= xmax; ci++ ) {
 			co = cj*grid->nx + ci;
+			//phiOrig = phi->basis[co]->EvalFull( poly->origin );
 			phiOrig = phi->basis[co]->ci[0];
 			phiMax = ( phiOrig > phiMax ) ? phiOrig : phiMax;
 			phiMin = ( phiOrig < phiMin ) ? phiOrig : phiMin;
@@ -97,17 +111,18 @@ double Limiter::FirstOrder( int pi ) {
 
 	grid->GetPolyVertInds( pi, vinds );
 
+	//phiOrig = basis->EvalFull( poly->origin );
 	phiOrig = basis->ci[0];
 	for( vi = 0; vi < 4; vi++ ) {
 		phiVert = basis->EvalFull( poly->verts[vi] );
 		alpha_i = 1.0;
 		if( phiVert > phiOrig + 1.0e-6 ) {
 			ratio = (phiMax - phiOrig)/(phiVert - phiOrig);
-			alpha_i = ( 1.0 < ratio ) ? 1.0 : ratio;
+			alpha_i = func1( ratio );
 		}
 		else if( phiVert < phiOrig - 1.0e-6 ) {
 			ratio = (phiMin - phiOrig)/(phiVert - phiOrig);
-			alpha_i = ( 1.0 < ratio ) ? 1.0 : ratio;
+			alpha_i = func1( ratio );
 		}
 		alpha = ( alpha_i < alpha ) ? alpha_i : alpha;
 	}
@@ -115,7 +130,7 @@ double Limiter::FirstOrder( int pi ) {
 	return alpha;
 }
 
-double Limiter::SecondOrder( int pi, int dim ) {
+double Limiter::SecondOrder( Field* phiTemp, int pi, int dim ) {
 	Grid* 		grid 	= phi->grid;
 	Polygon*	poly	= grid->polys[pi];
 	Basis*		basis	= phi->basis[pi];
@@ -150,11 +165,11 @@ double Limiter::SecondOrder( int pi, int dim ) {
 		alpha_i = 1.0;
 		if( dPhiVert > dPhi + 1.0e-6 ) {
 			ratio = (dPhiMax - dPhi)/(dPhiVert - dPhi);
-			alpha_i = ( 1.0 < ratio ) ? 1.0 : ratio;
+			alpha_i = func1( ratio );
 		}
 		else if( dPhiVert < dPhi - 1.0e-6 ) {
 			ratio = (dPhiMin - dPhi)/(dPhiVert - dPhi);
-			alpha_i = ( 1.0 < ratio ) ? 1.0 : ratio;
+			alpha_i = func1( ratio );
 		}
 		alpha = ( alpha_i < alpha ) ? alpha_i : alpha;
 	}
