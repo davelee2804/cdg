@@ -135,7 +135,7 @@ double Basis::EvalDerivFull( double* pt, int dim ) {
 	int 	i;
 	double	result	= 0.0;
 
-	for( i = 0; i < nFuncs; i++ ) {
+	for( i = 1; i < nFuncs; i++ ) {
 		result += ci[i]*EvalDerivIJ( pt, i, dim );
 	}
 	return result;
