@@ -21,6 +21,14 @@ double func( double* x ) {
 	return cos( 0.5*M_PI*x[0] )*cos( 0.5*M_PI*x[1] );
 }
 
+double dxFunc( double* x ) {
+	return -0.5*M_PI*sin( 0.5*M_PI*x[0] )*cos( 0.5*M_PI*x[1] );
+}
+
+double dyFunc( double* x ) {
+	return -0.5*M_PI*cos( 0.5*M_PI*x[0] )*sin( 0.5*M_PI*x[1] );
+}
+
 void Distort( double* pt ) {
 	double alpha = 1.1;
 	double gamma = 0.8;
@@ -40,7 +48,6 @@ int main() {
 	Grid*		grid;
 	Field*		field;
 	Polygon* 	poly;
-	Polygon*	poly;
 	Triangle*	tri;
 	Basis*		basis;
 	double		ans			= 16.0/M_PI/M_PI;
@@ -56,6 +63,9 @@ int main() {
 	double		beta_ij[BASIS_ORDER*BASIS_ORDER*BASIS_ORDER*BASIS_ORDER];
 	double		betaInv_ij[BASIS_ORDER*BASIS_ORDER*BASIS_ORDER*BASIS_ORDER];
 	double		weight, *coord, fj[BASIS_ORDER*BASIS_ORDER];
+	double		phi_xn, phi_yn, phi_xa, phi_ya;
+	double		err_x, err_y, norm_x, norm_y;
+	double		point[2];
 
 	verts = new double*[4];
 	for( i = 0; i < 4; i++ ) {
@@ -132,6 +142,7 @@ int main() {
 	delete[] verts;
 	delete[] pts;
 
+/*
 	cout << "testing the basis function matrix inverse..." << endl;
 	for( i = 0; i < 8; i++ ) {
 		grid = new Grid( nx, ny, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
@@ -142,16 +153,16 @@ int main() {
 		cdg = new CDG( field, velx, vely );
 		cdg->InitBetaIJInv( func );
 
-		beta_ij_2 = new double[grid->polys[0]->nc*grid->polys[0]->nc];
-		cj = new double[grid->polys[0]->nc];
+		beta_ij_2 = new double[field->basis[0]->nFuncs*field->basis[0]->nFuncs];
+		cj = new double[field->basis[0]->nFuncs];
 
 		for( j = 0; j < grid->nPolys; j++ ) {
 			poly = grid->polys[j];
 			basis = field->basis[j];
 
-			MatInv( cdg->betaInv_ij[j], beta_ij_2, poly->nc );
-			AXEB( beta_ij_2, basis->ci, cj, poly->nc );
-			for( k = 0; k < poly->nc; k++ ) {
+			MatInv( cdg->betaInv_ij[j], beta_ij_2, basis->nFuncs );
+			AXEB( beta_ij_2, basis->ci, cj, basis->nFuncs );
+			for( k = 0; k < basis->nFuncs; k++ ) {
 				basis->ci[k] = cj[k];
 			}
 		}
@@ -162,6 +173,47 @@ int main() {
 
 		delete[] beta_ij_2;
 		delete[] cj;
+		delete cdg;
+		delete grid;
+		delete field;
+		delete velx;
+		delete vely;
+
+		nx *= 2;
+		ny *= 2;
+	}
+*/
+
+	cout << "testing the basis derivative function..." << endl;
+	nx = ny = 1;
+	for( i = 0; i < 8; i++ ) {
+		grid = new Grid( nx, ny, -1.0, -1.0, +1.0, +1.0, 3, 3, true );
+		field = new Field( grid );
+		velx = new Field( grid );
+		vely = new Field( grid );
+
+		cdg = new CDG( field, velx, vely );
+		cdg->InitBetaIJInv( func );
+
+		err_x = err_y = norm_x = norm_y = 0.0;
+
+		for( j = 0; j < 3*3; j++ ) {
+			point[0] = grid->minx + (i%grid->nx)*grid->dx + (0.5 + j%3)/3*grid->dx;
+			point[1] = grid->miny + (i/grid->nx)*grid->dy + (0.5 + j/3)/3*grid->dy;
+
+			phi_xn = field->basis[i]->EvalDerivFull( point, 0 );
+			phi_yn = field->basis[i]->EvalDerivFull( point, 1 );
+			phi_xa = dxFunc( point );
+			phi_ya = dyFunc( point );
+
+			err_x += fabs(phi_xa - phi_xn);
+			err_y += fabs(phi_ya - phi_yn);
+			norm_x += fabs( phi_xa );
+			norm_y += fabs( phi_ya );
+		}
+
+		cout << err_x/norm_x << "\t" << err_y/norm_y << endl;
+
 		delete cdg;
 		delete grid;
 		delete field;
