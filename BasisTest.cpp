@@ -142,7 +142,6 @@ int main() {
 	delete[] verts;
 	delete[] pts;
 
-/*
 	cout << "testing the basis function matrix inverse..." << endl;
 	for( i = 0; i < 8; i++ ) {
 		grid = new Grid( nx, ny, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
@@ -182,7 +181,6 @@ int main() {
 		nx *= 2;
 		ny *= 2;
 	}
-*/
 
 	cout << "testing the basis derivative function..." << endl;
 	nx = ny = 1;
@@ -212,7 +210,7 @@ int main() {
 			norm_y += fabs( phi_ya );
 		}
 
-		cout << err_x/norm_x << "\t" << err_y/norm_y << endl;
+		cout << 1.0 - err_x/norm_x << "\t" << 1.0 - err_y/norm_y << endl;
 
 		delete cdg;
 		delete grid;

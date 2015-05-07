@@ -86,15 +86,11 @@ double Basis::EvalDerivIJ( double* pt, int i, int dim ) {
 	/* normalise coefficients to improve condition number of the matrix */
 	a = coeff*pow( dxInv, xPower )*pow( dyInv, yPower )/fac1/fac2;
 
-	if( dim == 0 ) {
+	if( dim == 0 && xPower > 0 ) {
 		xPower--;
 	}
-	else if( dim == 1 ) {
+	else if( dim == 1 && yPower > 0 ) {
 		yPower--;
-	}
-	else {
-		cerr << "invalid dimensional derivative: " << dim << endl;
-		abort();
 	}
 
 	/* remove mean component so higher order basis functions are massless */
