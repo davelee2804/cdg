@@ -112,19 +112,6 @@ Grid::~Grid() {
 	delete[] verts;
 }
 
-Polygon* Grid::FindPoly( double* pt ) {
-	int 		i 		= (pt[0] - minx)/dx;	
-	int 		j 		= (pt[1] - miny)/dy;
-	Polygon* 	poly 	= polys[j*nx+i];
-
-	/* sanity test */
-	if( !poly->IsInside( pt ) ) {
-		cerr << "ERROR in poly finding algorithm" << endl;
-		abort();
-	}
-	return poly;
-}
-
 int Grid::GetPolyIndex( double* pt ) {
 	int 	i 		= (pt[0] - minx)/dx;	
 	int 	j 		= (pt[1] - miny)/dy;

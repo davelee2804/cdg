@@ -42,7 +42,11 @@ int main() {
 
 		//point->Print();
 
-		testPoly = grid->FindPoly( point );
+		j = grid->GetPolyIndex( point );
+		if( !grid->polys[j]->IsInside( point ) ) {
+			cerr << "ERROR in poly finding algorithm" << endl;
+			abort();
+		}
 	}
 
 	for( i = 0; i < grid->nPolys; i++ ) {

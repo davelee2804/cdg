@@ -21,7 +21,6 @@ class Grid {
 		double**	verts;
 		Edge**		edges;
 		Polygon**	polys;
-		Polygon*	FindPoly( double* pt );
 		int			GetPolyIndex( double* pt );
 		int			EdgeCoordToIndex( int norm, int xi, int yj );
 		void		EdgeIndexToCoord( int ei, int* norm, int* xi, int* yj );
