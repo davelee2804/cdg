@@ -13,6 +13,8 @@
 #include "CDG.h"
 #include "Limiter.h"
 
+//#define DISTORT_MESH
+
 using namespace std;
 
 #define NX 32
@@ -36,15 +38,45 @@ double uy( double* p ) {
 }
 
 double p0( double* p ) {
-	double r2 = (p[0] + 0.0)*(p[0] + 0.0) + (p[1] - 0.5)*(p[1] - 0.5);
+	double	xo	= 0.5*cos( 0.25*M_PI );
+	double	yo	= 0.5*sin( 0.25*M_PI );
+	double	r2	= ( p[0] - xo )*( p[0] - xo ) + ( p[1] - yo )*( p[1] - yo );
 	if( sqrt( r2 ) < 0.40 ) return exp(-40.0*r2);
 	return 0.0;
 }
 
 double p1( double* p ) {
-	double r2 = (p[0] + 0.5)*(p[0] + 0.5) + (p[1] - 0.0)*(p[1] - 0.0);
+	double	xo	= 0.5*cos( 0.75*M_PI );
+	double	yo	= 0.5*sin( 0.75*M_PI );
+	double	r2	= ( p[0] - xo )*( p[0] - xo ) + ( p[1] - yo )*( p[1] - yo );
 	if( sqrt( r2 ) < 0.40 ) return exp(-40.0*r2);
 	return 0.0;
+}
+
+void TestQuadArea( Polygon* poly ) {
+	double		side[2], p[2], q[2], s2[4], p2, q2, det, a1, a2;
+	int			i;
+
+	for( i = 0; i < 4; i++ ) {
+		side[0] = poly->verts[(i+1)%4][0] - poly->verts[i][0];
+		side[1] = poly->verts[(i+1)%4][1] - poly->verts[i][1];
+		s2[i] = side[0]*side[0] + side[1]*side[1];
+	}
+	det = s2[1] + s2[3] - s2[0] - s2[2];
+
+	p[0] = poly->verts[2][0] - poly->verts[0][0];
+	p[1] = poly->verts[2][1] - poly->verts[0][1];
+	q[0] = poly->verts[3][0] - poly->verts[1][0];
+	q[1] = poly->verts[3][1] - poly->verts[1][1];
+	p2 = p[0]*p[0] + p[1]*p[1];
+	q2 = q[0]*q[0] + q[1]*q[1];
+
+	a1 = 0.25*sqrt( 4.0*p2*q2 - det*det );
+	a2 = poly->Area();
+
+	if( fabs( a1 - a2 ) > 1.0e-8 ) {
+		cout << "ERROR: area doesn't match expected... " << fabs( a1 - a2 ) << endl;
+	}
 }
 
 int main() {
@@ -64,6 +96,26 @@ int main() {
 	double		val_n, val_a;
 	double		coord[2];
 	Limiter*	lim		= new Limiter( phi );
+
+#ifdef DISTORT_MESH
+	srand( 7919 );
+	for( i = 0; i < pgrid->nVerts; i++ ) {
+		if( i%(pgrid->nx + 1) == 0 || i%(pgrid->nx + 1) == pgrid->nx || i/(pgrid->nx + 1) == 0 || i/(pgrid->nx + 1) == pgrid->ny ) {
+			continue;
+		}
+
+		pgrid->verts[i][0] += 0.1*pgrid->dx*( (2.0*rand())/RAND_MAX - 1.0 );
+		pgrid->verts[i][1] += 0.1*pgrid->dy*( (2.0*rand())/RAND_MAX - 1.0 );
+	}
+	pgrid->UpdateEdges();
+	pgrid->UpdatePolys();
+	pgrid->UpdateTris();
+	phi->UpdateBasis();
+	ans->UpdateBasis();
+	for( i = 0; i < pgrid->nPolys; i++ ) {
+		TestQuadArea( pgrid->polys[i] );
+	}
+#endif
 
 	for( i = 0; i < vgrid->nPolys; i++ ) {
 		for( j = 0; j < 4; j++ ) {
@@ -95,7 +147,8 @@ int main() {
 	for( i = 1; i <= nsteps; i++ ) {
 		cout << "time step: " << i;
 		cdg->Advect( dt );
-		lim->Apply();
+		//lim->Apply();
+
 		cout << "\t...done, volume: " << phi->Integrate() << endl;
 		if( i%dump == 0 ) {
 			phi->Write( "phi", i, BASIS_ORDER );
