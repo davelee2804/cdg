@@ -9,5 +9,6 @@ class Field {
 		double		IntegrateConstant(); // assumes constant cell wise values
 		double		Integrate();
 		void 		Copy( Field* field );
+		void		UpdateBasis();
 		void 		Write( string fname, int tstep, int n );
 };

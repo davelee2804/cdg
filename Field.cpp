@@ -105,6 +105,14 @@ void Field::Copy( Field* field ) {
 	}
 }
 
+void Field::UpdateBasis() {
+	int i;
+
+	for( i = 0; i < grid->nPolys; i++ ) {
+		basis[i]->aInv = 1.0/grid->polys[i]->Area();
+	}
+}
+
 void Field::Write( string fname, int tstep, int n ) {
 	ofstream 	file;
 	char 		filename[80];

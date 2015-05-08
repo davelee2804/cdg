@@ -94,7 +94,6 @@ double Basis::EvalDerivIJ( double* pt, int i, int dim ) {
 	}
 
 	/* remove mean component so higher order basis functions are massless */
-	/* TODO: does the mean need to be differented also?? */
 	for( j = 0; j < poly->n; j++ ) {
 		for( k = 0; k < poly->tris[j]->nQuadPts; k++ ) {
 			tri = poly->tris[j];
