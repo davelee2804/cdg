@@ -11,9 +11,13 @@ Edge::Edge( double* x1, double* x2 ) {
 	v2[0] = x2[0];
 	v2[1] = x2[1];
 
-	m = (v2[1] - v1[1])/(v2[0] - v1[0]);
-	c = v1[1] - m*v1[0];
+	Init();
+}
 
+Edge::~Edge() {
+}
+
+void Edge::Init() {
 	dx = v1[0] - v2[0];
 	dy = v1[1] - v2[1];
 
@@ -21,17 +25,6 @@ Edge::Edge( double* x1, double* x2 ) {
 	y0 = 0.5*(v1[1] + v2[1]);
 
 	r2 = (v1[0] - x0)*(v1[0] - x0) + (v1[1] - y0)*(v1[1] - y0);
-}
-
-Edge::~Edge() {
-}
-
-double Edge::GetY( double x ) {
-	return m*x + c;
-}
-
-double Edge::GetX( double y ) {
-	return (y - c)/m;
 }
 
 bool Edge::Intersection( Edge* l, double* p ) {

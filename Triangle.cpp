@@ -8,6 +8,8 @@
 using namespace std;
 
 Triangle::Triangle( double* x1, double* x2, double* x3, int _order ) {
+	int i;
+
 	a[0] = x1[0];
 	a[1] = x1[1];
 	b[0] = x2[0];
@@ -18,25 +20,69 @@ Triangle::Triangle( double* x1, double* x2, double* x3, int _order ) {
 	order = _order;
 
 	if( order == 1 ) {
-		double tmp[1][2];
-
 		nQuadPts = 1;
 		wi = new double[nQuadPts];
-		wi[0] = 1.0;
-		tmp[0][0] = 1.0/3.0;
-		tmp[0][1] = 1.0/3.0;
 		qi = new double*[nQuadPts];
 		qi[0] = new double[2];
+	}
+	else if( order == 2 ) {
+		nQuadPts = 3;
+		wi = new double[nQuadPts];
+		qi = new double*[nQuadPts];
+		for( i = 0; i < nQuadPts; i++ ) {
+			qi[i] = new double[2];
+		}
+	}
+	else if( order == 3 ) {
+		nQuadPts = 6;
+		wi = new double[nQuadPts];
+		qi = new double*[nQuadPts];
+		for( i = 0; i < nQuadPts; i++ ) {
+			qi[i] = new double[2];
+		}
+	}
+	else {
+		cerr << "triangle quadrature order: " << order << "not implemented" << endl;
+		abort();
+	}
+
+	Init();
+
+	ab = new Edge( a, b );
+	bc = new Edge( b, c );
+	ca = new Edge( c, a );
+}
+
+Triangle::~Triangle() {
+	int i;
+
+	for( i = 0; i < nQuadPts; i++ ) {
+		delete[] qi[i];
+	}
+	delete[] qi;
+	delete[] wi;
+
+	delete ab;
+	delete bc;
+	delete ca;
+}
+
+void Triangle::Init() {
+	int 	i;
+	double 	tmp[6][2];
+
+	if( order == 1 ) {
+		wi[0] = 1.0;
+
+		tmp[0][0] = 1.0/3.0;
+		tmp[0][1] = 1.0/3.0;
+
 		qi[0][0] = a[0]*tmp[0][0] + b[0]*tmp[0][1] + c[0]*(1.0 - tmp[0][0] - tmp[0][1]);
 		qi[0][1] = a[1]*tmp[0][0] + b[1]*tmp[0][1] + c[1]*(1.0 - tmp[0][0] - tmp[0][1]);
 	}
 	else if( order == 2 ) {
 		int i;
-		double tmp[3][2];
 
-		nQuadPts = 3;
-
-		wi = new double[nQuadPts];
 		wi[0] = 1.0/3;
 		wi[1] = 1.0/3;
 		wi[2] = 1.0/3;
@@ -50,21 +96,13 @@ Triangle::Triangle( double* x1, double* x2, double* x3, int _order ) {
 		tmp[2][0] = 1.0/6.0;
 		tmp[2][1] = 1.0/6.0;
 
-		qi = new double*[nQuadPts];
 		for( i = 0; i < nQuadPts; i++ ) {
 			/* generate the coordinates of the quadrature points from the barycentric coordinates */
-			qi[i] = new double[2];
 			qi[i][0] = a[0]*tmp[i][0] + b[0]*tmp[i][1] + c[0]*(1.0 - tmp[i][0] - tmp[i][1]);
 			qi[i][1] = a[1]*tmp[i][0] + b[1]*tmp[i][1] + c[1]*(1.0 - tmp[i][0] - tmp[i][1]);
 		}
 	}
 	else if( order == 3 ) {
-		int i;
-		double tmp[6][2];
-
-		nQuadPts = 6;
-
-		wi = new double[nQuadPts];
 		wi[0] = 0.109951743655321843;
 		wi[1] = 0.109951743655321857;
  		wi[2] = 0.109951743655321885;
@@ -86,35 +124,11 @@ Triangle::Triangle( double* x1, double* x2, double* x3, int _order ) {
  		tmp[4][1] = 0.108103018168070275;
  		tmp[5][1] = 0.445948490915965612;
 
-		qi = new double*[nQuadPts];
 		for( i = 0; i < nQuadPts; i++ ) {
-			qi[i] = new double[2];
 			qi[i][0] = a[0]*tmp[i][0] + b[0]*tmp[i][1] + c[0]*(1.0 - tmp[i][0] - tmp[i][1]);
 			qi[i][1] = a[1]*tmp[i][0] + b[1]*tmp[i][1] + c[1]*(1.0 - tmp[i][0] - tmp[i][1]);
 		}
 	}
-	else {
-		cerr << "triangle quadrature order: " << order << "not implemented" << endl;
-		abort();
-	}
-
-	ab = new Edge( a, b );
-	bc = new Edge( b, c );
-	ca = new Edge( c, a );
-}
-
-Triangle::~Triangle() {
-	int i;
-
-	for( i = 0; i < nQuadPts; i++ ) {
-		delete[] qi[i];
-	}
-	delete[] qi;
-	delete[] wi;
-
-	delete ab;
-	delete bc;
-	delete ca;
 }
 
 double Triangle::Area() {

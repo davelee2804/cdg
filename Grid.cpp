@@ -128,8 +128,38 @@ Polygon* Grid::FindPoly( double* pt ) {
 int Grid::GetPolyIndex( double* pt ) {
 	int 	i 		= (pt[0] - minx)/dx;	
 	int 	j 		= (pt[1] - miny)/dy;
+	int		ind		= j*nx + i;
 
-	return j*nx + i;
+	if( polys[ind]->IsInside( pt ) ) {
+		return ind;
+	}
+
+	if( i > 0      && j > 0      && polys[(j-1)*nx+(i-1)]->IsInside( pt ) ) {
+		return (j-1)*nx + (i-1);
+	}
+	if( i > 0      &&               polys[(j+0)*nx+(i-1)]->IsInside( pt ) ) {
+		return (j+0)*nx + (i-1);
+	}
+	if( i > 0      && j < ny - 1 && polys[(j+1)*nx+(i-1)]->IsInside( pt ) ) {
+		return (j+1)*nx + (i-1);
+	}
+	if(               j < ny - 1 && polys[(j+1)*nx+(i+0)]->IsInside( pt ) ) {
+		return (j+1)*nx + (i+0);
+	}
+	if( i < nx - 1 && j < ny - 1 && polys[(j+1)*nx+(i+1)]->IsInside( pt ) ) {
+		return (j+1)*nx + (i+1);
+	}
+	if( i < nx - 1 &&               polys[(j+0)*nx+(i+1)]->IsInside( pt ) ) {
+		return (j+0)*nx + (i+1);
+	}
+	if( i < nx - 1 && j > 0      && polys[(j-1)*nx+(i+1)]->IsInside( pt ) ) {
+		return (j-1)*nx + (i+1);
+	}
+	if(               j > 0      && polys[(j-1)*nx+(i+0)]->IsInside( pt ) ) {
+		return (j-1)*nx + (i+0);
+	}
+
+	return ind;
 }
 
 /* norm = 0: edge is normal to x, norm = 1: edge is normal to y */
@@ -270,6 +300,7 @@ void Grid::UpdateEdges() {
 			edges[ei]->v1[1] = verts[(j+0)*(nx+1)+(i+0)][1];
 			edges[ei]->v2[0] = verts[(j+1)*(nx+1)+(i+0)][0];
 			edges[ei]->v2[1] = verts[(j+1)*(nx+1)+(i+0)][1];
+			edges[ei]->Init();
 			ei++;
 		}
 	}
@@ -280,6 +311,7 @@ void Grid::UpdateEdges() {
 			edges[ei]->v1[1] = verts[(j+0)*(nx+1)+(i+0)][1];
 			edges[ei]->v2[0] = verts[(j+0)*(nx+1)+(i+1)][0];
 			edges[ei]->v2[1] = verts[(j+0)*(nx+1)+(i+1)][1];
+			edges[ei]->Init();
 			ei++;
 		}
 	}
@@ -304,7 +336,7 @@ void Grid::UpdatePolys() {
 	}
 }
 
-void Grid::UpdateTriangles() {
+void Grid::UpdateTris() {
 	int 		i, j;
 	Polygon* 	poly;
 	Triangle*	tri;
@@ -319,6 +351,7 @@ void Grid::UpdateTriangles() {
 			tri->b[1] = poly->verts[(j+1)%poly->n][1];
 			tri->c[0] = poly->origin[0];
 			tri->c[1] = poly->origin[1];
+			tri->Init();
 		}
 	}
 }

@@ -32,6 +32,6 @@ class Grid {
 		void		GetPolyVertInds( int ci, int* vinds );
 		void		UpdateEdges();
 		void		UpdatePolys();
-		void		UpdateTriangles();
+		void		UpdateTris();
 		void		Write( string fname, int n );
 };

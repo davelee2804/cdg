@@ -49,7 +49,7 @@ void CFA::Advect( double dt ) {
 	CalcChars( preGrid, dt );
 	preGrid->UpdateEdges();
 	preGrid->UpdatePolys();
-	preGrid->UpdateTriangles();
+	preGrid->UpdateTris();
 	CalcFluxes( preGrid, phiTemp, dt );
 	for( i = 0; i < grid->nPolys; i++ ) {
 		for( j = 0; j < phi->basis[i]->nFuncs; j++ ) {

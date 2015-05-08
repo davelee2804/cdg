@@ -96,14 +96,20 @@ void CDG::InitBetaIJInv( Func* func ) {
 }
 
 void CDG::Advect( double dt ) {
+	int 	i;
 	Grid* 	grid	= phi->grid;
 	Grid*	preGrid = new Grid( grid->nx, grid->ny, grid->minx, grid->miny, grid->maxx, grid->maxy, grid->quadOrder, grid->basisOrder, true );
 	Field*	phiTemp = new Field( grid );
 
+	for( i = 0; i < grid->nVerts; i++ ) {
+		preGrid->verts[i][0] = grid->verts[i][0];
+		preGrid->verts[i][1] = grid->verts[i][1];
+	}
+
 	CalcChars( preGrid, dt );
 	preGrid->UpdateEdges();
 	preGrid->UpdatePolys();
-	preGrid->UpdateTriangles();
+	preGrid->UpdateTris();
 	CalcFluxes( preGrid, phiTemp, dt );
 	phi->Copy( phiTemp );
 
@@ -162,12 +168,12 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	}
 
 	for( edge_i = 0; edge_i < grid->nEdges; edge_i++ ) {
-        prePoly = CreatePreImage( edge_i, grid, preGrid, &into, &from, pinds );
+		prePoly = CreatePreImage( edge_i, grid, preGrid, &into, &from, pinds );
 		if( prePoly == NULL ) {
 			continue;
 		}
 
-        for( poly_i = 0; poly_i < 6; poly_i++ ) {
+		for( poly_i = 0; poly_i < 6; poly_i++ ) {
 			from = pinds[poly_i];
 			incPoly = grid->polys[from];
 			intPoly = Intersection( prePoly, incPoly );
@@ -189,8 +195,8 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 				}
 				delete intPoly;
 			}
-        }
-        delete prePoly;
+		}
+		delete prePoly;
 	}
 
 	/* add rhs contributions from previous poly */
