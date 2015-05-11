@@ -1,3 +1,5 @@
+typedef double ( Func ) ( double* x );
+
 class Field {
 	public:
 		Field( Grid* _grid );
@@ -8,7 +10,8 @@ class Field {
 		void 		LinearInterp( double* x, double* v );
 		double		IntegrateConstant(); // assumes constant cell wise values
 		double		Integrate();
-		double		L2Error( Field* analytic );
+		double		L1Error( Func* analytic );
+		double		L2Error( Func* analytic );
 		void 		Copy( Field* field );
 		void		UpdateBasis();
 		void 		Write( string fname, int tstep, int n );

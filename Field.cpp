@@ -96,7 +96,31 @@ double Field::Integrate() {
 	return vol;
 }
 
-double Field::L2Error( Field* analytic ) {
+double Field::L1Error( Func* analytic ) {
+	Polygon*	poly;
+	Triangle*	tri;
+	double		error = 0.0, norm = 0.0;
+	double		weight, val, ana;
+	int 		i, j, k;
+
+	for( i = 0; i < grid->nPolys; i++ ) {
+		poly = grid->polys[i];
+		for( j = 0; j < poly->n; j++ ) {
+			tri = poly->tris[j];
+			for( k = 0; k < tri->nQuadPts; k++ ) {
+				val = basis[i]->EvalFull( tri->qi[k] );
+				ana = analytic( tri->qi[k] );
+				weight = tri->wi[k]*tri->Area();
+				error += weight*fabs( val - ana );
+				norm += weight*fabs( ana );
+			}
+		}
+	}
+
+	return error / norm;
+}
+
+double Field::L2Error( Func* analytic ) {
 	Polygon*	poly;
 	Triangle*	tri;
 	double		errorSq = 0.0, normSq = 0.0;
@@ -109,8 +133,8 @@ double Field::L2Error( Field* analytic ) {
 			tri = poly->tris[j];
 			for( k = 0; k < tri->nQuadPts; k++ ) {
 				val = basis[i]->EvalFull( tri->qi[k] );
-				ana = analytic->basis[i]->EvalFull( tri->qi[k] );
-				weight = tri->wi[k]*tri->Area()/poly->Area();
+				ana = analytic( tri->qi[k] );
+				weight = tri->wi[k]*tri->Area();
 				errorSq += weight*( val - ana )*( val - ana );
 				normSq += weight*ana*ana;
 			}

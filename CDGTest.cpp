@@ -18,8 +18,8 @@
 
 using namespace std;
 
-#define NX 32
-#define NY 32
+#define NX 64
+#define NY 64
 
 #define QUAD_ORDER 2
 #define BASIS_ORDER 2
@@ -117,10 +117,6 @@ int main() {
 	int			dump	= 1;
 	double		dt		= 0.5*M_PI/nsteps;
 	Field*		ans		= new Field( grid );
-	double		err		= 0.0;
-	double		norm	= 0.0;
-	double		val_n, val_a;
-	double		coord[2];
 	Limiter*	lim		= new Limiter( phi );
 
 #ifdef DISTORT_MESH
@@ -164,28 +160,23 @@ int main() {
 		cdg->Advect( dt );
 		//lim->Apply();
 
+for(j=0;j<grid->nPolys;j++){
+if(grid->polys[j]->origin[0]+grid->polys[j]->origin[1]>1.2){
+//if(j%grid->nx==0||j%grid->nx==grid->nx-1||j/grid->nx==0||j/grid->nx==grid->ny-1){
+phi->basis[j]->ci[1]=0.0;
+phi->basis[j]->ci[2]=0.0;
+phi->basis[j]->ci[3]=0.0;
+}
+}
+
 		cout << "\t...done, volume: " << phi->Integrate() << endl;
 		if( i%dump == 0 ) {
 			phi->Write( "phi", i, BASIS_ORDER );
 		}
 	}
 
-	for( i = 0; i < grid->nPolys; i++ ) {
-		if( i%NX == 0 || i%NX == NX-1 || i/NX == 0 || i/NX == NY-1 ) {
-			continue;
-		}
-
-		for( j = 0; j < BASIS_ORDER*BASIS_ORDER; j++ ) {
-			coord[0] = grid->minx + (i%grid->nx)*grid->dx + (0.5 + j%BASIS_ORDER)/BASIS_ORDER*grid->dx;
-			coord[1] = grid->miny + (i/grid->nx)*grid->dy + (0.5 + j/BASIS_ORDER)/BASIS_ORDER*grid->dy;
-			val_n = phi->basis[i]->EvalFull( coord );
-			val_a = ans->basis[i]->EvalFull( coord );
-			err += fabs(val_a - val_n);
-			norm += ans->basis[i]->ci[j];
-		}
-	}
-	cout << "L_1 error:  " << err/norm << endl;
-	cout << "L_2 error:  " << phi->L2Error( ans ) << endl;
+	cout << "L_1 error:  " << phi->L1Error( p1 ) << endl;
+	cout << "L_2 error:  " << phi->L2Error( p1 ) << endl;
 	cout << "mass loss:  " << 1.0 - phi->Integrate()/ans->Integrate() << endl;
 
 	delete lim;
