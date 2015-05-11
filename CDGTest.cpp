@@ -18,8 +18,8 @@
 
 using namespace std;
 
-#define NX 64
-#define NY 64
+#define NX 32
+#define NY 32
 
 #define QUAD_ORDER 2
 #define BASIS_ORDER 2
@@ -175,8 +175,8 @@ phi->basis[j]->ci[3]=0.0;
 		}
 	}
 
-	cout << "L_1 error:  " << phi->L1Error( p1 ) << endl;
-	cout << "L_2 error:  " << phi->L2Error( p1 ) << endl;
+	cout << "L_1 error:  " << phi->L1Error( p1, false ) << endl;
+	cout << "L_2 error:  " << phi->L2Error( p1, false ) << endl;
 	cout << "mass loss:  " << 1.0 - phi->Integrate()/ans->Integrate() << endl;
 
 	delete lim;

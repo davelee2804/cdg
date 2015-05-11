@@ -35,33 +35,35 @@ Basis::~Basis() {
 double Basis::EvalIJ( double* pt, int i ) {
 	int			j, k;
 	double 		fac1 = 1.0, fac2 = 1.0, a, b = 0.0, weight;
+	int			xPower = i%order;
+	int			yPower = i/order;
 	Triangle*	tri;
 
 	if( i == 0 ) {
 		return 1.0;
 	}
 
-	for( j = 1; j < i%order; j++ ) {
+	for( j = 1; j < xPower; j++ ) {
 		fac1 *= j;
 	}
-	for( k = 1; k < i/order; k++ ) {
+	for( k = 1; k < yPower; k++ ) {
 		fac2 *= k;
 	}
 
 	/* normalise coefficients to improve condition number of the matrix */
-	a = pow( dxInv, i%order )*pow( dyInv, i/order )/fac1/fac2;
+	a = pow( dxInv, xPower )*pow( dyInv, yPower )/fac1/fac2;
 
 	/* remove mean component so higher order basis functions are massless */
 	for( j = 0; j < poly->n; j++ ) {
 		for( k = 0; k < poly->tris[j]->nQuadPts; k++ ) {
 			tri = poly->tris[j];
 			weight = tri->wi[k]*tri->Area();
-			b += weight*pow( tri->qi[k][0] - origin[0], i%order )*pow( tri->qi[k][1] - origin[1], i/order );
+			b += weight*pow( tri->qi[k][0] - origin[0], xPower )*pow( tri->qi[k][1] - origin[1], yPower );
 		}
 	}
 	b *= aInv;
 
-	return a*( pow( pt[0] - origin[0], i%order )*pow( pt[1] - origin[1], i/order ) - b );
+	return a*( pow( pt[0] - origin[0], xPower )*pow( pt[1] - origin[1], yPower ) - b );
 }
 
 double Basis::EvalDerivIJ( double* pt, int i, int dim ) {
@@ -76,10 +78,10 @@ double Basis::EvalDerivIJ( double* pt, int i, int dim ) {
 		return 0.0;
 	}
 
-	for( j = 1; j < i%order; j++ ) {
+	for( j = 1; j < xPower; j++ ) {
 		fac1 *= j;
 	}
-	for( k = 1; k < i/order; k++ ) {
+	for( k = 1; k < yPower; k++ ) {
 		fac2 *= k;
 	}
 

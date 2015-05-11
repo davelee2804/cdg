@@ -96,7 +96,7 @@ double Field::Integrate() {
 	return vol;
 }
 
-double Field::L1Error( Func* analytic ) {
+double Field::L1Error( Func* analytic, bool doNorm ) {
 	Polygon*	poly;
 	Triangle*	tri;
 	double		error = 0.0, norm = 0.0;
@@ -117,10 +117,14 @@ double Field::L1Error( Func* analytic ) {
 		}
 	}
 
+	if( !doNorm ) {
+		norm = 1.0;
+	}
+
 	return error / norm;
 }
 
-double Field::L2Error( Func* analytic ) {
+double Field::L2Error( Func* analytic, bool doNorm ) {
 	Polygon*	poly;
 	Triangle*	tri;
 	double		errorSq = 0.0, normSq = 0.0;
@@ -139,6 +143,10 @@ double Field::L2Error( Func* analytic ) {
 				normSq += weight*ana*ana;
 			}
 		}
+	}
+
+	if( !doNorm ) {
+		normSq = 1.0;
 	}
 
 	return sqrt( errorSq / normSq );
