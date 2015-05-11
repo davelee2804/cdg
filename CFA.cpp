@@ -20,10 +20,12 @@ using namespace std;
 #define ADV_FORWARD (+1)
 #define ADV_BACKWARD (-1)
 
-CFA::CFA( Field* _phi, Field* _velx, Field* _vely ) {
+CFA::CFA( Field* _phi, Field* _velx, Field* _vely, Func* _fu, Func* _fv ) {
 	phi  = _phi;
 	velx = _velx;
 	vely = _vely;
+	fu   = _fu;
+	fv   = _fv;
 
 	pts = new double*[4];
 	pts[0] = new double[2];
@@ -66,8 +68,14 @@ void CFA::TraceEuler( double dt, int dir, double* xi, double* xf ) {
 
 	xorig[0] = xi[0];
 	xorig[1] = xi[1];
-	velx->LinearInterp( xorig, vorig + 0 );
-	vely->LinearInterp( xorig, vorig + 1 );
+	if( velx && vely ) {
+		velx->LinearInterp( xorig, vorig + 0 );
+		vely->LinearInterp( xorig, vorig + 1 );
+	}
+	else {
+		vorig[0] = fu( xorig );
+		vorig[1] = fv( xorig );
+	}
 
 	/* assume cfl < 1.0 */
 	xf[0] = xorig[0] + dir*dt*vorig[0];
@@ -80,15 +88,27 @@ void CFA::TraceRK2( double dt, int dir, double* xi, double* xf ) {
 
 	xorig[0] = xi[0];
 	xorig[1] = xi[1];
-	velx->LinearInterp( xorig, vorig + 0 );
-	vely->LinearInterp( xorig, vorig + 1 );
+	if( velx && vely ) {
+		velx->LinearInterp( xorig, vorig + 0 );
+		vely->LinearInterp( xorig, vorig + 1 );
+	}
+	else {
+		vorig[0] = fu( xorig );
+		vorig[1] = fv( xorig );
+	}
 
 	/* assume cfl < 1.0 */
 	xhalf[0] = xorig[0] + dir*dt*vorig[0];
 	xhalf[1] = xorig[1] + dir*dt*vorig[1];
 	CheckBounds( xhalf );
-	velx->LinearInterp( xhalf, vhalf + 0 );
-	vely->LinearInterp( xhalf, vhalf + 1 );
+	if( velx && vely ) {
+		velx->LinearInterp( xhalf, vhalf + 0 );
+		vely->LinearInterp( xhalf, vhalf + 1 );
+	}
+	else {
+		vhalf[0] = fu( xhalf );
+		vhalf[1] = fv( xhalf );
+	}
 	xf[0] = xorig[0] + dir*0.5*dt*( vhalf[0] + vorig[0] );
 	xf[1] = xorig[1] + dir*0.5*dt*( vhalf[1] + vorig[1] );
 	CheckBounds( xf );

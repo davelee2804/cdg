@@ -1,10 +1,14 @@
+typedef double ( Func ) ( double* x );
+
 class CFA {
 	public:
-		CFA( Field* _phi, Field* _velx, Field* _vely );
+		CFA( Field* _phi, Field* _velx, Field* _vely, Func* _fu, Func* _fv );
 		~CFA();
 		Field* 		phi;
 		Field* 		velx;
 		Field* 		vely;
+		Func*		fu;
+		Func*		fv;
 		double** 	pts;
 		void 		Advect( double dt );
 		void 		CalcChars( Grid* preGrid, double dt );

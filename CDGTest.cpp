@@ -20,21 +20,15 @@ using namespace std;
 #define NX 32
 #define NY 32
 
-#define QUAD_ORDER 2
+#define QUAD_ORDER 3
 #define BASIS_ORDER 2
 
 double ux( double* p ) {
-	double radius	= sqrt( p[0]*p[0] + p[1]*p[1] );
-	double theta 	= atan2( p[1], p[0] );
-	double result	= -radius*sin( theta );
-	return result;
+	return -p[1];
 }
 
 double uy( double* p ) {
-	double radius	= sqrt( p[0]*p[0] + p[1]*p[1] );
-	double theta 	= atan2( p[1], p[0] );
-	double result	= +radius*cos( theta );
-	return result;
+	return +p[0];
 }
 
 double p0( double* p ) {
@@ -80,10 +74,7 @@ void TestQuadArea( Polygon* poly ) {
 }
 
 int main() {
-	Grid*		vgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, 2, false );
 	Grid*		pgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
-	Field*		velx	= new Field( vgrid );
-	Field*		vely	= new Field( vgrid );
 	Field*		phi		= new Field( pgrid );
 	CDG*		cdg;
 	int			i, j;
@@ -117,28 +108,16 @@ int main() {
 	}
 #endif
 
-	for( i = 0; i < vgrid->nPolys; i++ ) {
-		for( j = 0; j < 4; j++ ) {
-			coord[0] = vgrid->minx + (i%vgrid->nx)*vgrid->dx + (j%2)*vgrid->dx;
-			coord[1] = vgrid->miny + (i/vgrid->nx)*vgrid->dy + (j/2)*vgrid->dy;
-			velx->basis[i]->ci[j] = ux( coord );
-			vely->basis[i]->ci[j] = uy( coord );
-		}
-	}
-
 	/* set up the final solution */
-	cdg	= new CDG( ans, velx, vely );
+	cdg	= new CDG( ans, NULL, NULL, ux, uy );
 	cdg->InitBetaIJInv( p1 );
 	delete cdg;
 
 	/* set up the actual solver */
-	cdg = new CDG( phi, velx, vely );
+	cdg = new CDG( phi, NULL, NULL, ux, uy );
 	cdg->InitBetaIJInv( p0 );
 
 	pgrid->Write( "pgrid", BASIS_ORDER );
-	vgrid->Write( "vgrid", 2 );
-	velx->Write( "velx", 0, 2 );
-	vely->Write( "vely", 0, 2 );
 	ans->Write( "ans", 0, BASIS_ORDER );
 	phi->Write( "phi", 0, BASIS_ORDER );
 
@@ -169,16 +148,14 @@ int main() {
 			norm += ans->basis[i]->ci[j];
 		}
 	}
-	cout << "error:      " << err/norm << endl;
-	cout << "mass loss:  " << 1.0 - phi->IntegrateConstant()/ans->IntegrateConstant() << endl;
+	cout << "L_1 error:  " << err/norm << endl;
+	cout << "L_2 error:  " << phi->L2Error( ans ) << endl;
+	cout << "mass loss:  " << 1.0 - phi->Integrate()/ans->Integrate() << endl;
 
 	delete lim;
 	delete cdg;
 	delete phi;
-	delete velx;
-	delete vely;
 	delete pgrid;
-	delete vgrid;
 
 	return 1;
 }

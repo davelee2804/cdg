@@ -8,6 +8,7 @@ class Field {
 		void 		LinearInterp( double* x, double* v );
 		double		IntegrateConstant(); // assumes constant cell wise values
 		double		Integrate();
+		double		L2Error( Field* analytic );
 		void 		Copy( Field* field );
 		void		UpdateBasis();
 		void 		Write( string fname, int tstep, int n );

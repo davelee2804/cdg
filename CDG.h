@@ -2,7 +2,7 @@ typedef double ( Func ) ( double* x );
 
 class CDG : public CFA {
 	public:
-		CDG( Field* _phi, Field* _velx, Field* _vely );
+		CDG( Field* _phi, Field* _velx, Field* _vely, Func* _fu, Func* _fv );
 		virtual 		~CDG();
 		double** 		betaInv_ij;
 		void			InitBetaIJInv( Func* func );

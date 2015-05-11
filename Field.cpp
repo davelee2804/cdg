@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <string>
+#include <cmath>
 
 #include "Edge.h"
 #include "Triangle.h"
@@ -68,7 +69,7 @@ void Field::LinearInterp( double* x, double* v ) {
 /* integrate assuming constant values for each poly */
 double Field::IntegrateConstant() {
 	int i;
-	double vol = 0;
+	double vol = 0.0;
 
 	for( i = 0; i < grid->nPolys; i++ ) {
 		vol += basis[i]->ci[0]*grid->dx*grid->dy;
@@ -78,7 +79,7 @@ double Field::IntegrateConstant() {
 
 double Field::Integrate() {
 	int i, j, k;
-	double val, vol = 0;
+	double val, vol = 0.0;
 	Polygon* poly;
 	Triangle* tri;
 
@@ -93,6 +94,30 @@ double Field::Integrate() {
 		}
 	}
 	return vol;
+}
+
+double Field::L2Error( Field* analytic ) {
+	Polygon*	poly;
+	Triangle*	tri;
+	double		errorSq = 0.0, normSq = 0.0;
+	double		weight, val, ana;
+	int 		i, j, k;
+
+	for( i = 0; i < grid->nPolys; i++ ) {
+		poly = grid->polys[i];
+		for( j = 0; j < poly->n; j++ ) {
+			tri = poly->tris[j];
+			for( k = 0; k < tri->nQuadPts; k++ ) {
+				val = basis[i]->EvalFull( tri->qi[k] );
+				ana = analytic->basis[i]->EvalFull( tri->qi[k] );
+				weight = tri->wi[k]*tri->Area()/poly->Area();
+				errorSq += weight*( val - ana )*( val - ana );
+				normSq += weight*ana*ana;
+			}
+		}
+	}
+
+	return sqrt( errorSq / normSq );
 }
 
 void Field::Copy( Field* field ) {

@@ -16,7 +16,7 @@
 
 //#define CDG_TEST 1
 
-CDG::CDG( Field* _phi, Field* _velx, Field* _vely ) : CFA( _phi, _velx, _vely ) {
+CDG::CDG( Field* _phi, Field* _velx, Field* _vely, Func* _fu, Func* _fv ) : CFA( _phi, _velx, _vely, _fu, _fv ) {
 	betaInv_ij = NULL;
 }
 
