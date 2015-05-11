@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include <cmath>
 
 #include "Edge.h"
@@ -20,7 +21,7 @@ using namespace std;
 #define NX 32
 #define NY 32
 
-#define QUAD_ORDER 3
+#define QUAD_ORDER 2
 #define BASIS_ORDER 2
 
 double ux( double* p ) {
@@ -73,15 +74,49 @@ void TestQuadArea( Polygon* poly ) {
 	}
 }
 
+void WriteVelocity( Grid* grid ) {
+	ofstream    file;
+	char        filename[80];
+	int         i;
+
+	sprintf( filename, "output/vgrid.x.txt" );
+	file.open( filename );
+	for( i = 0; i <= grid->nx; i++ ) {
+		file << grid->verts[i][0] << endl;
+	}
+	file.close();
+
+	sprintf( filename, "output/vgrid.y.txt" );
+	file.open( filename );
+	for( i = 0; i <= grid->ny; i++ ) {
+		file << grid->verts[i*(grid->nx+1)][1] << endl;
+	}
+	file.close();
+
+	sprintf( filename, "output/velx.0000.txt" );
+	file.open( filename );
+	for( i = 0; i < grid->nVerts; i++ ) {
+		file << ux( grid->verts[i] ) << endl;
+	}
+	file.close();
+
+	sprintf( filename, "output/vely.0000.txt" );
+	file.open( filename );
+	for( i = 0; i < grid->nVerts; i++ ) {
+		file << uy( grid->verts[i] ) << endl;
+	}
+	file.close();
+}
+
 int main() {
-	Grid*		pgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
-	Field*		phi		= new Field( pgrid );
+	Grid*		grid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
+	Field*		phi		= new Field( grid );
 	CDG*		cdg;
 	int			i, j;
 	int			nsteps	= 64*4;
 	int			dump	= 1;
 	double		dt		= 0.5*M_PI/nsteps;
-	Field*		ans		= new Field( pgrid );
+	Field*		ans		= new Field( grid );
 	double		err		= 0.0;
 	double		norm	= 0.0;
 	double		val_n, val_a;
@@ -90,21 +125,21 @@ int main() {
 
 #ifdef DISTORT_MESH
 	srand( 7919 );
-	for( i = 0; i < pgrid->nVerts; i++ ) {
-		if( i%(pgrid->nx + 1) == 0 || i%(pgrid->nx + 1) == pgrid->nx || i/(pgrid->nx + 1) == 0 || i/(pgrid->nx + 1) == pgrid->ny ) {
+	for( i = 0; i < grid->nVerts; i++ ) {
+		if( i%(grid->nx + 1) == 0 || i%(grid->nx + 1) == grid->nx || i/(grid->nx + 1) == 0 || i/(grid->nx + 1) == grid->ny ) {
 			continue;
 		}
 
-		pgrid->verts[i][0] += 0.1*pgrid->dx*( (2.0*rand())/RAND_MAX - 1.0 );
-		pgrid->verts[i][1] += 0.1*pgrid->dy*( (2.0*rand())/RAND_MAX - 1.0 );
+		grid->verts[i][0] += 0.1*grid->dx*( (2.0*rand())/RAND_MAX - 1.0 );
+		grid->verts[i][1] += 0.1*grid->dy*( (2.0*rand())/RAND_MAX - 1.0 );
 	}
-	pgrid->UpdateEdges();
-	pgrid->UpdatePolys();
-	pgrid->UpdateTris();
+	grid->UpdateEdges();
+	grid->UpdatePolys();
+	grid->UpdateTris();
 	phi->UpdateBasis();
 	ans->UpdateBasis();
-	for( i = 0; i < pgrid->nPolys; i++ ) {
-		TestQuadArea( pgrid->polys[i] );
+	for( i = 0; i < grid->nPolys; i++ ) {
+		TestQuadArea( grid->polys[i] );
 	}
 #endif
 
@@ -117,9 +152,10 @@ int main() {
 	cdg = new CDG( phi, NULL, NULL, ux, uy );
 	cdg->InitBetaIJInv( p0 );
 
-	pgrid->Write( "pgrid", BASIS_ORDER );
+	grid->Write( "pgrid", BASIS_ORDER );
 	ans->Write( "ans", 0, BASIS_ORDER );
 	phi->Write( "phi", 0, BASIS_ORDER );
+	WriteVelocity( grid );
 
 	cout << "volume: " << phi->Integrate() << endl;
 
@@ -134,14 +170,14 @@ int main() {
 		}
 	}
 
-	for( i = 0; i < pgrid->nPolys; i++ ) {
+	for( i = 0; i < grid->nPolys; i++ ) {
 		if( i%NX == 0 || i%NX == NX-1 || i/NX == 0 || i/NX == NY-1 ) {
 			continue;
 		}
 
 		for( j = 0; j < BASIS_ORDER*BASIS_ORDER; j++ ) {
-			coord[0] = pgrid->minx + (i%pgrid->nx)*pgrid->dx + (0.5 + j%BASIS_ORDER)/BASIS_ORDER*pgrid->dx;
-			coord[1] = pgrid->miny + (i/pgrid->nx)*pgrid->dy + (0.5 + j/BASIS_ORDER)/BASIS_ORDER*pgrid->dy;
+			coord[0] = grid->minx + (i%grid->nx)*grid->dx + (0.5 + j%BASIS_ORDER)/BASIS_ORDER*grid->dx;
+			coord[1] = grid->miny + (i/grid->nx)*grid->dy + (0.5 + j/BASIS_ORDER)/BASIS_ORDER*grid->dy;
 			val_n = phi->basis[i]->EvalFull( coord );
 			val_a = ans->basis[i]->EvalFull( coord );
 			err += fabs(val_a - val_n);
@@ -155,7 +191,7 @@ int main() {
 	delete lim;
 	delete cdg;
 	delete phi;
-	delete pgrid;
+	delete grid;
 
 	return 1;
 }
