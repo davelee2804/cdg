@@ -197,7 +197,16 @@ Polygon* CFA::CreatePreImage( int ei, Grid* grid, Grid* preGrid, int* into, int*
 
 	/* if the cross product of the edge and the vector made by the lower point of the original edge and the 
 	   upper point of the final edge is > 0, then the flux is rightwards across the edge */
-	*into = ( GetNorm( grid->edges[ei]->v1, grid->edges[ei]->v2, preGrid->edges[ei]->v2 ) > 0.0 ) ? right : left;
+	//*into = ( GetNorm( grid->edges[ei]->v1, grid->edges[ei]->v2, preGrid->edges[ei]->v2 ) > 0.0 ) ? right : left;
+	/* TODO: assuming solid body rotation in normal face evaluation here!!!! */
+	int xi, yj;
+	grid->EdgeIndexToCoord( ei, &norm, &xi, &yj );
+	if( norm == 0 ) {
+		*into = ( yj < grid->ny/2 ) ? right : left;
+	}
+	else {
+		*into = ( xi < grid->nx/2 ) ? right : left;
+	}
 	*from = ( *into == left ) ? right : left;
 
 #ifdef CFA_TEST
