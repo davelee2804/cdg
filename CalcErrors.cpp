@@ -23,15 +23,30 @@ double p1( double* p ) {
 	return 0.0;
 }
 
+double ErrorPerPoly( Field* phi, Func* f ) {
+	Grid*		grid	= phi->grid;
+	Polygon*	poly;
+	double		error 	= 0.0;
+	int			i;
+
+	for( i = 0; i < grid->nPolys; i++ ) {
+		poly = grid->polys[i];
+		error += grid->dx*grid->dy*fabs( phi->basis[i]->EvalFull( poly->origin ) - f( poly->origin ) );
+	}
+	return error;
+}
+
 int main( int argc, char** argv ) {
 	int			nx, i;
 	Grid*		grid;
 	Field*		phi;
 	char		filename[80];
-	double		l1[3], l2[3], l1_norm[3], l2_norm[3];
+	double		l1[3], l2[3], l1_norm[3], l2_norm[3], epp[3];
 
 	i = 0;
 	for( nx = 32; nx < 256; nx *= 2 ) {
+		cout << "nx: " << nx << endl;
+
 		grid 	= new Grid( nx, nx, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
 		phi		= new Field( grid );
 
@@ -48,6 +63,7 @@ int main( int argc, char** argv ) {
 		l2_norm[i] = phi->L2Error( p1, true );
 		l1[i] = phi->L1Error( p1, false );
 		l2[i] = phi->L2Error( p1, false );
+		epp[i] = ErrorPerPoly( phi, p1 );
 
 		i++;
 
@@ -69,6 +85,10 @@ int main( int argc, char** argv ) {
 
 	cout << "\nL_2 (normalized):    ";
 	for( i = 0; i < 3; i++ ) { cout << l2_norm[i] << "\t"; }
+	cout << endl;
+
+	cout << "\nerror per cell:      ";
+	for( i = 0; i < 3; i++ ) { cout << epp[i] << "\t"; }
 	cout << endl;
 
 	return 1;
