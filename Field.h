@@ -15,4 +15,5 @@ class Field {
 		void 		Copy( Field* field );
 		void		UpdateBasis();
 		void 		Write( string fname, int tstep, int n );
+		void 		WriteBasis( string fname, int tstep );
 };

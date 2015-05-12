@@ -200,3 +200,19 @@ void Field::Write( string fname, int tstep, int n ) {
 	}
 	file.close();
 }
+
+void Field::WriteBasis( string fname, int tstep ) {
+	ofstream 	file;
+	char 		filename[80];
+	int 		i, j;
+
+	sprintf( filename, "output/%s_basis.%.4u.txt", fname.c_str(), tstep );
+	file.open( filename );
+	for( i = 0; i < grid->nPolys; i++ ) {
+		for( j = 0; j < basis[i]->nFuncs; j++ ) {
+			file << basis[i]->ci[j] << "\t";
+		}
+		file << endl;
+	}
+	file.close();
+}

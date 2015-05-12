@@ -18,10 +18,10 @@
 
 using namespace std;
 
-#define NX 32
-#define NY 32
+#define NX 64
+#define NY 64
 
-#define QUAD_ORDER 2
+#define QUAD_ORDER 3
 #define BASIS_ORDER 2
 
 double ux( double* p ) {
@@ -114,7 +114,7 @@ int main() {
 	CDG*		cdg;
 	int			i, j;
 	int			nsteps	= 64*4;
-	int			dump	= 1;
+	int			dump	= 8;
 	double		dt		= 0.5*M_PI/nsteps;
 	Field*		ans		= new Field( grid );
 	Limiter*	lim		= new Limiter( phi );
@@ -172,6 +172,7 @@ phi->basis[j]->ci[3]=0.0;
 		cout << "\t...done, volume: " << phi->Integrate() << endl;
 		if( i%dump == 0 ) {
 			phi->Write( "phi", i, BASIS_ORDER );
+			phi->WriteBasis( "phi", i );
 		}
 	}
 
