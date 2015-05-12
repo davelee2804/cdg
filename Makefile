@@ -12,6 +12,11 @@ OBJS = CDG.o \
 FLAGS = -g -Wall
 CC = g++
 
+calcErrorsTest: CalcErrors.o ${OBJS}
+	${CC} -o calcErrorsTest CalcErrors.o ${OBJS} ${FLAGS}
+CalcErrors.o: CalcErrors.cpp Field.o Grid.o Polygon.o Basis.o Triangle.o Edge.o
+	${CC} -c CalcErrors.cpp ${FLAGS}
+
 cdgTest: CDGTest.o ${OBJS}
 	${CC} -o cdgTest CDGTest.o ${OBJS} ${FLAGS}
 CDGTest.o: CDG.cpp Limiter.o CDG.o LinAlg.o CFA.o Field.o Grid.o Polygon.o Basis.o Triangle.o Edge.o
