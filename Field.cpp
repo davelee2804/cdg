@@ -180,9 +180,9 @@ void Field::Write( string fname, int tstep, int n ) {
 	sprintf( filename, "output/%s.%.4u.txt", fname.c_str(), tstep );
 	file.open( filename );
 	for( i = 0; i < grid->ny; i++ ) {
-		for( j = 0; j < grid->basisOrder; j++ ) {
+		for( j = 0; j < n; j++ ) {
 			for( k = 0; k < grid->nx; k++ ) {
-				for( l = 0; l < grid->basisOrder; l++ ) {
+				for( l = 0; l < n; l++ ) {
 					basis_i = basis[i*grid->nx+k];
 					if( grid->internal ) {
 						point[0] = grid->minx + k*grid->dx + (0.5 + l)*grid->dx/n;
@@ -213,6 +213,19 @@ void Field::WriteBasis( string fname, int tstep ) {
 			file << basis[i]->ci[j] << "\t";
 		}
 		file << endl;
+	}
+	file.close();
+}
+
+void Field::ReadBasis( string fname ) {
+	ifstream 	file;
+	int 		i, j;
+
+	file.open( fname.c_str() );
+	for( i = 0; i < grid->nPolys; i++ ) {
+		for( j = 0; j < basis[i]->nFuncs; j++ ) {
+			file >> basis[i]->ci[j];
+		}
 	}
 	file.close();
 }
