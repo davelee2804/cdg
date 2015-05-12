@@ -9,6 +9,9 @@
 #include "Grid.h"
 #include "Basis.h"
 #include "Field.h"
+#include "LinAlg.h"
+#include "CFA.h"
+#include "CDG.h"
 
 using namespace std;
 
@@ -36,10 +39,38 @@ double ErrorPerPoly( Field* phi, Func* f ) {
 	return error;
 }
 
+void WriteDifference( Field* phi, Field* ans, int nx ) {
+	Grid*		grid		= phi->grid;
+	char 		filename[50];
+	ofstream 	file;
+	int 		i, j, k, l;
+	int 		n 			= 2;
+	double		point[2], val;
+
+	sprintf( filename, "output/diff_%.3u.txt", nx );
+	file.open( filename );
+	for( i = 0; i < grid->ny; i++ ) {
+		for( j = 0; j < n; j++ ) {
+			for( k = 0; k < grid->nx; k++ ) {
+				for( l = 0; l < n; l++ ) {
+					point[0] = grid->minx + k*grid->dx + (0.5 + l)*grid->dx/n;
+					point[1] = grid->miny + i*grid->dy + (0.5 + j)*grid->dy/n;
+					val = ans->basis[i*grid->nx+k]->EvalFull( point ) - phi->basis[i*grid->nx+k]->EvalFull( point );
+					file << val << endl;
+				}
+			}
+		}
+		file << endl;
+	}
+	file.close();
+}
+
 int main( int argc, char** argv ) {
 	int			nx, i;
 	Grid*		grid;
 	Field*		phi;
+	Field*		ans;
+	CDG*		cdg;
 	char		filename[80];
 	double		l1[3], l2[3], l1_norm[3], l2_norm[3], epp[3];
 
@@ -47,11 +78,19 @@ int main( int argc, char** argv ) {
 	for( nx = 32; nx < 256; nx *= 2 ) {
 		cout << "nx: " << nx << endl;
 
-		grid 	= new Grid( nx, nx, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
-		phi		= new Field( grid );
+		grid = new Grid( nx, nx, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
+		phi	 = new Field( grid );
+		ans  = new Field( grid );
 
 		sprintf( filename, "input/Q%uB%u_basis_%.3u.txt", QUAD_ORDER, BASIS_ORDER, nx );
 		phi->ReadBasis( filename );
+
+		/* set the basis funcs for the  */
+		cdg = new CDG( ans, NULL, NULL, NULL, NULL );
+		cdg->InitBetaIJInv( p1 );
+		delete cdg;
+
+		WriteDifference( phi, ans, nx );
 
 		sprintf( filename, "phi_%.3u", nx );
 		phi->Write( filename, 256, 1 );
@@ -67,6 +106,7 @@ int main( int argc, char** argv ) {
 
 		i++;
 
+		delete ans;
 		delete phi;
 		delete grid;
 	}
