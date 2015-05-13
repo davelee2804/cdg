@@ -8,6 +8,9 @@
 #include "Basis.h"
 #include "Grid.h"
 #include "Field.h"
+#include "LinAlg.h"
+#include "CFA.h"
+#include "CDG.h"
 
 using namespace std;
 
@@ -45,9 +48,12 @@ int main() {
 	int			i, j;
 	Grid*		grid;
 	Field*		field;
+	CDG*		cdg;
 	double		vol;
 	double		ans			= 16.0/M_PI/M_PI;
 
+	/* test convergence of errors with increased resolution for given quadrature order */
+	cout << "testing quadrature, order: " << QUAD_ORDER << endl;
 	for( i = 0; i < 8; i++ ) {
 		grid = new Grid( nx, ny, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
 		field = new Field( grid );
@@ -62,8 +68,28 @@ int main() {
 		nx *= 2;
 		ny *= 2;
 
-		delete grid;
 		delete field;
+		delete grid;
+	}
+
+	/* now test with the basis functions */
+	nx = ny = 1;
+	cout << "testing basis function setup and integration" << endl;
+	for( i = 0; i < 8; i++ ) {
+		grid  = new Grid( nx, ny, -1.0, -1.0, +1.0, +1.0, 3, 2, true );
+		field = new Field( grid );
+		cdg   = new CDG( field, NULL, NULL, NULL, NULL );
+
+		cdg->InitBetaIJInv( func );
+		vol = field->Integrate();
+		cout << fabs( 1.0 - vol/ans ) << endl;
+
+		nx *= 2;
+		ny *= 2;
+
+		delete cdg;
+		delete field;
+		delete grid;
 	}
 
 	return 1;
