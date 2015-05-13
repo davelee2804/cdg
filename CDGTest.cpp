@@ -148,9 +148,9 @@ int main() {
 	cdg = new CDG( phi, NULL, NULL, ux, uy );
 	cdg->InitBetaIJInv( p0 );
 
-	grid->Write( "pgrid", BASIS_ORDER );
-	ans->Write( "ans", 0, BASIS_ORDER );
-	phi->Write( "phi", 0, BASIS_ORDER );
+	grid->WriteTris( "pgrid" );
+	ans->WriteBasis( "ans", 0 );
+	phi->WriteBasis( "phi", 0 );
 	WriteVelocity( grid );
 
 	cout << "volume: " << phi->Integrate() << endl;
@@ -171,7 +171,6 @@ phi->basis[j]->ci[3]=0.0;
 
 		cout << "\t...done, volume: " << phi->Integrate() << endl;
 		if( i%dump == 0 ) {
-			phi->Write( "phi", i, BASIS_ORDER );
 			phi->WriteBasis( "phi", i );
 		}
 	}

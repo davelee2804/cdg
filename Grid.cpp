@@ -384,3 +384,24 @@ void Grid::Write( string fname, int n ) {
 	delete[] xCoords;
 	delete[] yCoords;
 }
+
+void Grid::WriteTris( string fname ) {
+	ofstream   file;
+	char       filename[80];
+	Polygon*   poly;
+	Triangle*  tri;
+	int        i, j, k;
+
+	sprintf( filename, "output/%s.txt", fname.c_str() );
+	file.open( filename );
+	for( i = 0; i < nPolys; i++ ) {
+		poly = polys[i];
+		for( j = 0; j < poly->n; j++ ) {
+			tri = poly->tris[j];
+			for( k = 0; k < tri->nQuadPts; k++ ) {
+				file << i << "\t" << tri->qi[k][0] << "\t" << tri->qi[k][1] << endl;
+			}
+		}
+	}
+	file.close();
+}

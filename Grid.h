@@ -33,4 +33,5 @@ class Grid {
 		void		UpdatePolys();
 		void		UpdateTris();
 		void		Write( string fname, int n );
+		void		WriteTris( string fname );
 };
