@@ -114,6 +114,38 @@ void CFA::TraceRK2( double dt, int dir, double* xi, double* xf ) {
 	CheckBounds( xf );
 }
 
+void CFA::TraceRK4( double dt, int dir, double* xi, double* xf ) {
+	double	k1[2], k2[2], k3[2], k4[2], xp[2];
+
+	if( fu == NULL || fv == NULL ) {
+		cout << "ERROR: velocity field not supplied as analytic function, so RK4 is not available." << endl;
+		abort();
+	}
+
+	k1[0] = fu( xi );
+	k1[1] = fv( xi );
+
+	xp[0] = xi[0] + dir*0.5*dt*k1[0];
+	xp[1] = xi[1] + dir*0.5*dt*k1[1];
+	k2[0] = fu( xp );
+	k2[1] = fv( xp );
+
+	xp[0] = xi[0] + dir*0.5*dt*k2[0];
+	xp[1] = xi[1] + dir*0.5*dt*k2[1];
+	k3[0] = fu( xp );
+	k3[1] = fv( xp );
+
+	xp[0] = xi[0] + dir*dt*k3[0];
+	xp[1] = xi[1] + dir*dt*k3[1];
+	k4[0] = fu( xp );
+	k4[1] = fv( xp );
+
+	xf[0] = xi[0] + dir*(dt/6.0)*( k1[0] + 2.0*k2[0] + 2.0*k3[0] + k4[0] );
+	xf[1] = xi[1] + dir*(dt/6.0)*( k1[1] + 2.0*k2[1] + 2.0*k3[1] + k4[1] );
+
+	CheckBounds( xf );
+}
+
 void CFA::CalcChars( Grid* preGrid, double dt ) {
 	int i, xi, yj;
 	int	nx = preGrid->nx;

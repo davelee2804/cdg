@@ -182,7 +182,8 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 				for( tri_i = 0; tri_i < intPoly->n; tri_i++ ) {
 					tri = intPoly->tris[tri_i];
 					for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
-						TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
+						//TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
+						TraceRK4( dt, ADV_FORWARD, tri->qi[quad_i], qf );
 						weight = tri->wi[quad_i]*tri->Area()/incPoly->Area(); //TODO for unstructred meshes, should this just be: weight = w_i * A_tri ??
 						tracer = phi->EvalAtCoord( tri->qi[quad_i] );
 						for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
@@ -204,7 +205,8 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		for( tri_i = 0; tri_i < grid->polys[poly_i]->n; tri_i++ ) {
 			tri = grid->polys[poly_i]->tris[tri_i];
 			for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
-				TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
+				//TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
+				TraceRK4( dt, ADV_FORWARD, tri->qi[quad_i], qf );
 				weight = tri->wi[quad_i]*tri->Area()/grid->polys[poly_i]->Area();
 				tracer = phi->EvalAtCoord( tri->qi[quad_i] );
 				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {

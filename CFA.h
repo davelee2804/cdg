@@ -15,6 +15,7 @@ class CFA {
 		void 		CalcFluxes( Grid* preGrid, Field* phiTemp, double dt );
 		void 		TraceEuler( double dt, int dir, double* xi, double* xf );
 		void 		TraceRK2( double dt, int dir, double* xi, double* xf );
+		void 		TraceRK4( double dt, int dir, double* xi, double* xf );
 		double 		GetNorm( double* a, double* b, double* c );
 		void		CheckBounds( double* pt );
 		Polygon* 	CreatePreImage( int ei, Grid* grid, Grid* preGrid, int* into, int* from, int* pinds );
