@@ -18,8 +18,8 @@
 
 using namespace std;
 
-#define NX 64
-#define NY 64
+#define NX 32
+#define NY 32
 
 #define QUAD_ORDER 3
 #define BASIS_ORDER 2
@@ -112,7 +112,7 @@ int main() {
 	Grid*		grid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
 	Field*		phi		= new Field( grid );
 	CDG*		cdg;
-	int			i, j;
+	int			i;
 	int			nsteps	= 64*4;
 	int			dump	= 8;
 	double		dt		= 0.5*M_PI/nsteps;
@@ -160,18 +160,11 @@ int main() {
 		cdg->Advect( dt );
 		//lim->Apply();
 
-for(j=0;j<grid->nPolys;j++){
-if(grid->polys[j]->origin[0]+grid->polys[j]->origin[1]>1.2){
-//if(j%grid->nx==0||j%grid->nx==grid->nx-1||j/grid->nx==0||j/grid->nx==grid->ny-1){
-phi->basis[j]->ci[1]=0.0;
-phi->basis[j]->ci[2]=0.0;
-phi->basis[j]->ci[3]=0.0;
-}
-}
-
 		cout << "\t...done, volume: " << phi->Integrate() << endl;
 		if( i%dump == 0 ) {
 			phi->WriteBasis( "phi", i );
+			phi->WriteDeriv( "phi", i, 0 );
+			phi->WriteDeriv( "phi", i, 1 );
 		}
 	}
 

@@ -9,7 +9,7 @@ OBJS = CDG.o \
        Edge.o \
        LinAlg.o \
 
-FLAGS = -g -Wall
+FLAGS = -O3 -Wall
 CC = g++
 
 calcErrorsTest: CalcErrors.o ${OBJS}

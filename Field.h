@@ -16,5 +16,6 @@ class Field {
 		void		UpdateBasis();
 		void 		Write( string fname, int tstep, int n );
 		void 		WriteBasis( string fname, int tstep );
+		void 		WriteDeriv( string fname, int tstep, int dim );
 		void 		ReadBasis( string fname );
 };

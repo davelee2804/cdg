@@ -217,6 +217,27 @@ void Field::WriteBasis( string fname, int tstep ) {
 	file.close();
 }
 
+void Field::WriteDeriv( string fname, int tstep, int dim ) {
+	ofstream   file;
+	char       filename[80];
+	int        i, j, k;
+	Polygon*   poly;
+	Triangle*  tri;
+
+	sprintf( filename, "output/%s_deriv_%u.%.4u.txt", fname.c_str(), dim, tstep );
+	file.open( filename );
+	for( i = 0; i < grid->nPolys; i++ ) {
+		poly = grid->polys[i];
+		for( j = 0; j < poly->n; j++ ) {
+			tri = poly->tris[j];
+			for( k = 0; k < tri->nQuadPts; k++ ) {
+				file << basis[i]->EvalDerivFull( tri->qi[k], dim ) << endl;
+			}
+		}
+	}
+	file.close();
+}
+
 void Field::ReadBasis( string fname ) {
 	ifstream 	file;
 	int 		i, j;

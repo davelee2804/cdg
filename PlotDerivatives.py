@@ -47,7 +47,9 @@ def eval_dy( x, y, p ):
 
 nx = int(sys.argv[1])
 
-P = np.loadtxt( 'phi_basis.1024.txt' )
+P = np.loadtxt( 'phi_basis.0256.txt' )
+dx = np.loadtxt( 'phi_deriv_0.0256.txt' )
+dy = np.loadtxt( 'phi_deriv_1.0256.txt' )
 XY = np.loadtxt( 'pgrid.txt' )
 
 c = XY[:,0]
@@ -73,12 +75,12 @@ for ii in np.arange( len(x) ):
 	dx_z[ii] = dx_a[ii] - dx_n[ii]
 	dy_z[ii] = dy_a[ii] - dy_n[ii]
 
-plt.tricontourf( triang, dx_n, 100 )
+plt.tricontourf( triang, dx, 100 )
 plt.colorbar()
 plt.savefig( 'dx_n.' + '%.3u'%nx + '.png' )
 plt.figure()
 
-plt.tricontourf( triang, dy_n, 100 )
+plt.tricontourf( triang, dy, 100 )
 plt.colorbar()
 plt.savefig( 'dy_n.' + '%.3u'%nx + '.png' )
 plt.figure()
@@ -91,14 +93,4 @@ plt.figure()
 plt.tricontourf( triang, dy_a, 100 )
 plt.colorbar()
 plt.savefig( 'dy_a.' + '%.3u'%nx + '.png' )
-plt.figure()
-
-plt.tricontourf( triang, dx_z, 100 )
-plt.colorbar()
-plt.savefig( 'dx_z.' + '%.3u'%nx + '.png' )
-plt.figure()
-
-plt.tricontourf( triang, dy_z, 100 )
-plt.colorbar()
-plt.savefig( 'dy_z.' + '%.3u'%nx + '.png' )
 plt.figure()
