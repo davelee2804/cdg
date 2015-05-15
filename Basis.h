@@ -8,6 +8,8 @@ class Basis {
 		double		dyInv;
 		double		aInv;
 		double*		ci;			// coefficients
+		double*		mean;
+		double*		scale;
 		double 		origin[2];
 		Polygon*	poly;
 		double		EvalIJ( double* pt, int i );
