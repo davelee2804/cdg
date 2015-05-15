@@ -238,15 +238,17 @@ void Field::WriteDeriv( string fname, int tstep, int dim ) {
 	file.close();
 }
 
-void Field::ReadBasis( string fname ) {
-	ifstream 	file;
-	int 		i, j;
+void Field::ReadBasis( string fname, int tstep ) {
+	ifstream    file;
+	char        filename[80];
+	int         i, j;
 
-	file.open( fname.c_str() );
+	sprintf( filename, "output/%s_basis.%.4u.txt", fname.c_str(), tstep );
+	file.open( filename );
 	for( i = 0; i < grid->nPolys; i++ ) {
 		for( j = 0; j < basis[i]->nFuncs; j++ ) {
 			file >> basis[i]->ci[j];
 		}
 	}
-	file.close();
+    file.close();
 }

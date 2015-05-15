@@ -74,6 +74,12 @@ void CDG::InitBetaIJInv( Func* func ) {
 			}
 		}
 		MatInv( beta_ij, betaInv_ij[pi], nBasis );
+
+		/* if we're not supplied a function, then we're not initializing the basis coefficients */
+		if( !func ) {
+			continue;
+		}
+
 		for( j = 0; j < nBasis; j++ ) {
 			fj[j] = 0.0;
 			for( k = 0; k < poly->n; k++ ) {

@@ -113,6 +113,7 @@ int main() {
 	Field*		phi		= new Field( grid );
 	CDG*		cdg;
 	int			i;
+	int			start	= 0;
 	int			nsteps	= 64*4;
 	int			dump	= 8;
 	double		dt		= 0.5*M_PI/nsteps;
@@ -145,19 +146,25 @@ int main() {
 	delete cdg;
 
 	/* set up the actual solver */
-	cdg = new CDG( phi, NULL, NULL, ux, uy );
-	cdg->InitBetaIJInv( p0 );
+	if( !start ) {
+		cdg = new CDG( phi, NULL, NULL, ux, uy );
+		cdg->InitBetaIJInv( p0 );
 
-	grid->WriteTris( "pgrid" );
-	ans->WriteBasis( "ans", 0 );
-	phi->WriteBasis( "phi", 0 );
-	phi->WriteDeriv( "phi", 0, 0 );
-	phi->WriteDeriv( "phi", 0, 1 );
-	WriteVelocity( grid );
-
+		grid->WriteTris( "pgrid" );
+		ans->WriteBasis( "ans", 0 );
+		phi->WriteBasis( "phi", 0 );
+		phi->WriteDeriv( "phi", 0, 0 );
+		phi->WriteDeriv( "phi", 0, 1 );
+		WriteVelocity( grid );
+	}
+	else {
+		phi->ReadBasis( "phi", start );
+		cdg = new CDG( phi, NULL, NULL, ux, uy );
+		cdg->InitBetaIJInv( NULL );
+	}
 	cout << "volume: " << phi->Integrate() << endl;
 
-	for( i = 1; i <= nsteps; i++ ) {
+	for( i = start + 1; i <= nsteps; i++ ) {
 		cout << "time step: " << i;
 		cdg->Advect( dt );
 		//lim->Apply();
