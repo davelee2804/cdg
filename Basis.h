@@ -8,8 +8,10 @@ class Basis {
 		double		dyInv;
 		double		aInv;
 		double*		ci;			// coefficients
-		double*		mean;
 		double*		scale;
+		double*		mean;
+		double*		mean_dx;
+		double*		mean_dy;
 		double 		origin[2];
 		Polygon*	poly;
 		void		Init();
