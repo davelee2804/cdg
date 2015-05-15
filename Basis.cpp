@@ -88,13 +88,6 @@ double Basis::EvalDerivIJ( double* pt, int i, int dim ) {
 	/* normalise coefficients to improve condition number of the matrix */
 	a = coeff*pow( dxInv, xPower )*pow( dyInv, yPower )/fac1/fac2;
 
-	if( dim == 0 && xPower > 0 ) {
-		xPower--;
-	}
-	else if( dim == 1 && yPower > 0 ) {
-		yPower--;
-	}
-
 	/* remove mean component so higher order basis functions are massless */
 	for( j = 0; j < poly->n; j++ ) {
 		for( k = 0; k < poly->tris[j]->nQuadPts; k++ ) {
@@ -104,6 +97,13 @@ double Basis::EvalDerivIJ( double* pt, int i, int dim ) {
 		}
 	}
 	b *= aInv;
+
+	if( dim == 0 && xPower > 0 ) {
+		xPower--;
+	}
+	else if( dim == 1 && yPower > 0 ) {
+		yPower--;
+	}
 
 	return a*( pow( pt[0] - origin[0], xPower )*pow( pt[1] - origin[1], yPower ) - b );
 }

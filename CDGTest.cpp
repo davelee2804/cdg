@@ -18,8 +18,8 @@
 
 using namespace std;
 
-#define NX 32
-#define NY 32
+#define NX 64
+#define NY 64
 
 #define QUAD_ORDER 3
 #define BASIS_ORDER 2
@@ -151,6 +151,8 @@ int main() {
 	grid->WriteTris( "pgrid" );
 	ans->WriteBasis( "ans", 0 );
 	phi->WriteBasis( "phi", 0 );
+	phi->WriteDeriv( "phi", 0, 0 );
+	phi->WriteDeriv( "phi", 0, 1 );
 	WriteVelocity( grid );
 
 	cout << "volume: " << phi->Integrate() << endl;
