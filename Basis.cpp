@@ -7,9 +7,7 @@
 #include "Basis.h"
 
 Basis::Basis( Polygon* _poly, int _order, double* _origin, double _dx, double _dy ) {
-	int        i, j, k, xPower, yPower;
-	double     fac1, fac2, weight;
-	Triangle*  tri;
+	int i;
 
 	poly = _poly;
 
@@ -22,7 +20,6 @@ Basis::Basis( Polygon* _poly, int _order, double* _origin, double _dx, double _d
 
 	dxInv = 1.0/_dx;
 	dyInv = 1.0/_dy;
-	aInv = 1.0/poly->Area();
 
 	ci = new double[nFuncs];
 	for( i = 0; i < nFuncs; i++ ) {
@@ -30,6 +27,22 @@ Basis::Basis( Polygon* _poly, int _order, double* _origin, double _dx, double _d
 	}
 	mean = new double[nFuncs];
 	scale = new double[nFuncs];
+
+	Init();
+}
+
+Basis::~Basis() {
+	delete[] ci;
+	delete[] mean;
+	delete[] scale;
+}
+
+void Basis::Init() {
+	int        i, j, k, xPower, yPower;
+	double     fac1, fac2, weight;
+	Triangle*  tri;
+
+	aInv = 1.0/poly->Area();
 
 	/* initialize the mean and scale components */
 	scale[0] = 1.0;
@@ -50,21 +63,16 @@ Basis::Basis( Polygon* _poly, int _order, double* _origin, double _dx, double _d
 		scale[i] = pow( dxInv, xPower )*pow( dyInv, yPower )/fac1/fac2;
 		
 		/* remove mean component so higher order basis functions are massless */
+		mean[i] = 0.0;
 		for( j = 0; j < poly->n; j++ ) {
-			for( k = 0; k < poly->tris[j]->nQuadPts; k++ ) {
-				tri = poly->tris[j];
+			tri = poly->tris[j];
+			for( k = 0; k < tri->nQuadPts; k++ ) {
 				weight = tri->wi[k]*tri->Area();
 				mean[i] += weight*pow( tri->qi[k][0] - origin[0], xPower )*pow( tri->qi[k][1] - origin[1], yPower );
 			}
 		}
 		mean[i] *= aInv;
 	}
-}
-
-Basis::~Basis() {
-	delete[] ci;
-	delete[] mean;
-	delete[] scale;
 }
 
 double Basis::EvalIJ( double* pt, int i ) {
@@ -94,7 +102,7 @@ double Basis::EvalDerivIJ( double* pt, int i, int dim ) {
 		yPower--;
 	}
 
-	return scale[i]*( pow( pt[0] - origin[0], xPower )*pow( pt[1] - origin[1], yPower ) - mean[i] );
+	return coeff*scale[i]*( pow( pt[0] - origin[0], xPower )*pow( pt[1] - origin[1], yPower ) - mean[i] );
 }
 
 double Basis::EvalConst( double* pt ) {
@@ -148,7 +156,8 @@ bool Basis::TestMean( double* volErr ) {
 	for( j = 0; j < poly->n; j++ ) {
 		tri = poly->tris[j];
 		for( k = 0; k < tri->nQuadPts; k++ ) {
-			weight = tri->wi[k]*tri->Area()/poly->Area();
+			//weight = tri->wi[k]*tri->Area()/poly->Area();
+			weight = tri->wi[k]*tri->Area();
 			for( i = 1; i < nFuncs; i++ ) {
 				*volErr += weight*ci[i]*EvalIJ( tri->qi[k], i );
 			}

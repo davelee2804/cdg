@@ -166,7 +166,7 @@ void Field::UpdateBasis() {
 	int i;
 
 	for( i = 0; i < grid->nPolys; i++ ) {
-		basis[i]->aInv = 1.0/grid->polys[i]->Area();
+		basis[i]->Init();
 	}
 }
 

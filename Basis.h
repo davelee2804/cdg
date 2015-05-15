@@ -12,6 +12,7 @@ class Basis {
 		double*		scale;
 		double 		origin[2];
 		Polygon*	poly;
+		void		Init();
 		double		EvalIJ( double* pt, int i );
 		double		EvalDerivIJ( double* pt, int i, int dim );
 		double 		EvalConst( double* pt );

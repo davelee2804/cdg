@@ -66,7 +66,7 @@ void CDG::InitBetaIJInv( Func* func ) {
 			for( l = 0; l < tri->nQuadPts; l++ ) {
 				for( j = 0; j < nBasis; j++ ) {
 					for( i = 0; i < nBasis; i++ ) {
-						weight = tri->wi[l]*tri->Area()/poly->Area();
+						weight = tri->wi[l]*tri->Area();
 						coord = tri->qi[l];
 						beta_ij[j*nBasis+i] += weight*basis->EvalIJ( coord, i )*basis->EvalIJ( coord, j );
 					}
@@ -85,7 +85,7 @@ void CDG::InitBetaIJInv( Func* func ) {
 			for( k = 0; k < poly->n; k++ ) {
 				tri = poly->tris[k];
 				for( l = 0; l < tri->nQuadPts; l++ ) {
-					weight = tri->wi[l]*tri->Area()/poly->Area();
+					weight = tri->wi[l]*tri->Area();
 					coord = tri->qi[l];
 					/* basis initially set as the spatial values at the poly coordinates */
 					fj[j] += weight*basis->EvalIJ( coord, j )*func( coord );
@@ -142,7 +142,7 @@ void CDG::BasisProjection( int kp, int k, double* Pij ) {
 	for( tri_i = 0; tri_i < poly->n; tri_i++ ) {
 		tri = poly->tris[tri_i];
 		for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
-			weight = tri->wi[quad_i]*tri->Area()/poly->Area();
+			weight = tri->wi[quad_i]*tri->Area();
 			coord = tri->qi[quad_i];
 			for( basis_m = 0; basis_m < nBasis; basis_m++ ) {
 				for( basis_j = 0; basis_j < nBasis; basis_j++ ) {
@@ -188,9 +188,8 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 				for( tri_i = 0; tri_i < intPoly->n; tri_i++ ) {
 					tri = intPoly->tris[tri_i];
 					for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
-						//TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
-						TraceRK4( dt, ADV_FORWARD, tri->qi[quad_i], qf );
-						weight = tri->wi[quad_i]*tri->Area()/incPoly->Area(); //TODO for unstructred meshes, should this just be: weight = w_i * A_tri ??
+						TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
+						weight = tri->wi[quad_i]*tri->Area();
 						tracer = phi->EvalAtCoord( tri->qi[quad_i] );
 						for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
 							basis_into = phi->basis[into]->EvalIJ( qf, basis_i );
@@ -211,9 +210,8 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		for( tri_i = 0; tri_i < grid->polys[poly_i]->n; tri_i++ ) {
 			tri = grid->polys[poly_i]->tris[tri_i];
 			for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
-				//TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
-				TraceRK4( dt, ADV_FORWARD, tri->qi[quad_i], qf );
-				weight = tri->wi[quad_i]*tri->Area()/grid->polys[poly_i]->Area();
+				TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
+				weight = tri->wi[quad_i]*tri->Area();
 				tracer = phi->EvalAtCoord( tri->qi[quad_i] );
 				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
 					basis_into = phi->basis[poly_i]->EvalIJ( qf, basis_i );
