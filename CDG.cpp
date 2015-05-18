@@ -164,7 +164,6 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	double 		weight, tracer, basis_into, basis_from;
 	double**	flux, qf[2];
 	int			nBasis	= phi->basis[0]->nFuncs;
-	int			arrivalCell;
 
 	flux = new double*[grid->nPolys];
 	for( poly_i = 0; poly_i < grid->nPolys; poly_i++ ) {

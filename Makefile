@@ -29,7 +29,7 @@ CFATest.o: CFATest.cpp CFA.o Field.o Basis.o Grid.o Polygon.o Triangle.o Edge.o
 
 cdgSSTest: CDGSingleCellTest.o ${OBJS}
 	${CC} -o cdgSSTest CDGSingleCellTest.o ${OBJS} ${FLAGS}
-CDGSingleCellTest.o: CDGSingleCellTest.cpp CDG.o CFA.o Field.o Basis.o Grid.o Polygon.o Triangle.o Edge.o
+CDGSingleCellTest.o: CDGSingleCellTest.cpp CDG.o CFA.o LinAlg.o Field.o Basis.o Grid.o Polygon.o Triangle.o Edge.o
 	${CC} -c CDGSingleCellTest.cpp ${FLAGS}
 
 cfaSSTest: CFASingleCellTest.o ${OBJS}
