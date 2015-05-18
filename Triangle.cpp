@@ -71,6 +71,9 @@ void Triangle::Init() {
 	int 	i;
 	double 	tmp[6][2];
 
+	/* calculate the area */
+	area = 0.5*fabs( (b[0] - a[0])*(c[1] - a[1]) - (b[1] - a[1])*(c[0] - a[0]) );
+
 	if( order == 1 ) {
 		wi[0] = 1.0;
 
@@ -129,10 +132,6 @@ void Triangle::Init() {
 			qi[i][1] = a[1]*tmp[i][0] + b[1]*tmp[i][1] + c[1]*(1.0 - tmp[i][0] - tmp[i][1]);
 		}
 	}
-}
-
-double Triangle::Area() {
-	return 0.5*fabs( (b[0] - a[0])*(c[1] - a[1]) - (b[1] - a[1])*(c[0] - a[0]) );
 }
 
 double Triangle::CrossProduct( int origin ) {

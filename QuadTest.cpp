@@ -35,7 +35,7 @@ double Integrate( Field* field, Func* func ) {
         for( ti = 0; ti < poly->n; ti++ ) {
             tri = poly->tris[ti];
             for( qi = 0; qi < tri->nQuadPts; qi++ ) {
-                vol += tri->wi[qi]*func( tri->qi[qi] )*tri->Area();
+                vol += tri->wi[qi]*func( tri->qi[qi] )*tri->area;
             }
         }
     }

@@ -65,7 +65,7 @@ void Basis::Init() {
 		for( j = 0; j < poly->n; j++ ) {
 			tri = poly->tris[j];
 			for( k = 0; k < tri->nQuadPts; k++ ) {
-				weight = tri->wi[k]*tri->Area();
+				weight = tri->wi[k]*tri->area;
 				mean[i] += weight*pow( tri->qi[k][0] - origin[0], xPower )*pow( tri->qi[k][1] - origin[1], yPower );
 			}
 		}
@@ -154,7 +154,7 @@ bool Basis::TestMean( double* volErr ) {
 	for( j = 0; j < poly->n; j++ ) {
 		tri = poly->tris[j];
 		for( k = 0; k < tri->nQuadPts; k++ ) {
-			weight = tri->wi[k]*tri->Area();
+			weight = tri->wi[k]*tri->area;
 			for( i = 1; i < nFuncs; i++ ) {
 				*volErr += weight*ci[i]*EvalIJ( tri->qi[k], i );
 			}

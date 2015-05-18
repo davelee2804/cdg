@@ -213,7 +213,7 @@ double Polygon::Area() {
 	int 	tri_i;
 
 	for( tri_i = 0; tri_i < n; tri_i++ ) {
-		area += tris[tri_i]->Area();
+		area += tris[tri_i]->area;
 	}
 	return area;
 }

@@ -8,60 +8,52 @@
 #include "Grid.h"
 #include "Basis.h"
 #include "Field.h"
+#include "LinAlg.h"
 #include "CFA.h"
 #include "CDG.h"
 
 using namespace std;
 
-#define NX 8
-#define NY 8
+#define NX 5
+#define NY 5
 
-#define QUAD_ORDER 2
+#define QUAD_ORDER 3
 #define BASIS_ORDER 2
 
 double p0( double* x ) {
-	if( x[0] > -0.75 && x[0] < -0.50 && x[1] > -0.75 && x[1] < -0.50 ) return 1.0;
+	if( x[0] > -0.6001 && x[0] < +0.6001 && x[1] > -0.6001 && x[1] < +0.6001 ) return 0.25*x[0];
 
 	return 0.0;
 }
 
+double ux( double* x ) { return -0.1; }
+double uy( double* x ) { return -0.1; }
+
 int main() {
-	Grid*	pgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
-	Grid*	vgrid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, 2, false );
-	Field*	velx	= new Field( vgrid );
-	Field*	vely	= new Field( vgrid );
-	Field*	phi		= new Field( pgrid );
-	CDG*	cdg		= new CDG( phi, velx, vely );
-	int		i, j;
-	double	dt		= 0.25*2.0/NX/1.0;
+	Grid*	grid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
+	Field*	phi		= new Field( grid );
+	CDG*	cdg		= new CDG( phi, NULL, NULL, ux, uy );
+	int		i;
+	double	dt		= 0.1*(4.0/NX)/0.1;
 
 	cdg->InitBetaIJInv( p0 );
 
-	for( i = 0; i < vgrid->nPolys; i++ ) {
-		for( j = 0; j < vgrid->polys[j]->nc; j++ ) {
-			velx->basis[i]->ci[j] = +1.0;
-			vely->basis[i]->ci[j] = +1.0;
-		}
-	}
+	grid->WriteTris( "pgrid" );
+	phi->WriteBasis( "phi", 0 );
+	phi->WriteDeriv( "phi", 0, 0 );
+	phi->WriteDeriv( "phi", 0, 1 );
 
-	vgrid->Write( "vgrid", 2 );
-	pgrid->Write( "pgrid", 2 );
-	velx->Write( "velx", 0, 2 );
-	vely->Write( "vely", 0, 2 );
-	phi->Write( "phi", 0, 2 );
-
-	for( i = 1; i <= 12; i++ ) {
+	for( i = 1; i <= 1; i++ ) {
 		cout << "time step: " << i << endl;
 		cdg->Advect( dt );
-		phi->Write( "phi", i );
+		phi->WriteBasis( "phi", i );
+		phi->WriteDeriv( "phi", i, 0 );
+		phi->WriteDeriv( "phi", i, 1 );
 	}
 
 	delete cdg;
 	delete phi;
-	delete velx;
-	delete vely;
-	delete pgrid;
-	delete vgrid;
+	delete grid;
 
 	return 1;
 }
