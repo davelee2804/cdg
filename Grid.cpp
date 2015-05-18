@@ -398,7 +398,7 @@ void Grid::WriteTris( string fname ) {
 		poly = polys[i];
 		for( j = 0; j < poly->n; j++ ) {
 			tri = poly->tris[j];
-			for( k = 0; k < tri->nQuadPts; k++ ) {
+			for( k = 0; k < tri->nq; k++ ) {
 				file << i << "\t" << tri->qi[k][0] << "\t" << tri->qi[k][1] << endl;
 			}
 		}

@@ -10,7 +10,7 @@ class Triangle {
 		Edge* 		bc;
 		Edge* 		ca;
 		int 		order;
-		int 		nQuadPts;
+		int 		nq;
 		double* 	wi;		// quadrature weights
 		double** 	qi;		// quadrature points
 		void		Init();

@@ -22,7 +22,7 @@ int main() {
 	cout << "[" << tri->c[0] << "," << tri->c[1] << "]" << endl;
 
 	cout << "quadrature coords: " << endl;
-	for( i = 0; i < tri->nQuadPts; i++ ) {
+	for( i = 0; i < tri->nq; i++ ) {
 		cout << "[" << tri->qi[i][0] << "," << tri->qi[i][1] << "]" << endl;
 	}
 

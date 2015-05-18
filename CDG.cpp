@@ -63,7 +63,7 @@ void CDG::InitBetaIJInv( Func* func ) {
 		basis = phi->basis[pi];
 		for( k = 0; k < poly->n; k++ ) {
 			tri = poly->tris[k];
-			for( l = 0; l < tri->nQuadPts; l++ ) {
+			for( l = 0; l < tri->nq; l++ ) {
 				for( j = 0; j < nBasis; j++ ) {
 					for( i = 0; i < nBasis; i++ ) {
 						weight = tri->wi[l]*tri->area;
@@ -84,7 +84,7 @@ void CDG::InitBetaIJInv( Func* func ) {
 			fj[j] = 0.0;
 			for( k = 0; k < poly->n; k++ ) {
 				tri = poly->tris[k];
-				for( l = 0; l < tri->nQuadPts; l++ ) {
+				for( l = 0; l < tri->nq; l++ ) {
 					weight = tri->wi[l]*tri->area;
 					coord = tri->qi[l];
 					/* basis initially set as the spatial values at the poly coordinates */
@@ -141,7 +141,7 @@ void CDG::BasisProjection( int kp, int k, double* Pij ) {
 
 	for( tri_i = 0; tri_i < poly->n; tri_i++ ) {
 		tri = poly->tris[tri_i];
-		for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
+		for( quad_i = 0; quad_i < tri->nq; quad_i++ ) {
 			weight = tri->wi[quad_i]*tri->area;
 			coord = tri->qi[quad_i];
 			for( basis_m = 0; basis_m < nBasis; basis_m++ ) {
@@ -186,7 +186,7 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 			if( intPoly ) {
 				for( tri_i = 0; tri_i < intPoly->n; tri_i++ ) {
 					tri = intPoly->tris[tri_i];
-					for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
+					for( quad_i = 0; quad_i < tri->nq; quad_i++ ) {
 						TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
 						weight = tri->wi[quad_i]*tri->area;
 						tracer = phi->EvalAtCoord( tri->qi[quad_i] );
@@ -208,7 +208,7 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 	for( poly_i = 0; poly_i < grid->nPolys; poly_i++ ) {
 		for( tri_i = 0; tri_i < grid->polys[poly_i]->n; tri_i++ ) {
 			tri = grid->polys[poly_i]->tris[tri_i];
-			for( quad_i = 0; quad_i < tri->nQuadPts; quad_i++ ) {
+			for( quad_i = 0; quad_i < tri->nq; quad_i++ ) {
 				TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
 				weight = tri->wi[quad_i]*tri->area;
 				tracer = phi->EvalAtCoord( tri->qi[quad_i] );

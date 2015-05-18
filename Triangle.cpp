@@ -20,30 +20,29 @@ Triangle::Triangle( double* x1, double* x2, double* x3, int _order ) {
 	order = _order;
 
 	if( order == 1 ) {
-		nQuadPts = 1;
-		wi = new double[nQuadPts];
-		qi = new double*[nQuadPts];
-		qi[0] = new double[2];
+		nq = 1;
 	}
 	else if( order == 2 ) {
-		nQuadPts = 3;
-		wi = new double[nQuadPts];
-		qi = new double*[nQuadPts];
-		for( i = 0; i < nQuadPts; i++ ) {
-			qi[i] = new double[2];
-		}
+		nq = 3;
 	}
-	else if( order == 3 ) {
-		nQuadPts = 6;
-		wi = new double[nQuadPts];
-		qi = new double*[nQuadPts];
-		for( i = 0; i < nQuadPts; i++ ) {
-			qi[i] = new double[2];
-		}
+	else if( order == 3 || order == 4 ) {
+		nq = 6;
+	}
+	else if( order == 5 ) {
+		nq = 10;
+	}
+	else if( order == 6 ) {
+		nq = 11;
 	}
 	else {
 		cerr << "triangle quadrature order: " << order << "not implemented" << endl;
 		abort();
+	}
+
+	wi = new double[nq];
+	qi = new double*[nq];
+	for( i = 0; i < nq; i++ ) {
+		qi[i] = new double[2];
 	}
 
 	Init();
@@ -56,7 +55,7 @@ Triangle::Triangle( double* x1, double* x2, double* x3, int _order ) {
 Triangle::~Triangle() {
 	int i;
 
-	for( i = 0; i < nQuadPts; i++ ) {
+	for( i = 0; i < nq; i++ ) {
 		delete[] qi[i];
 	}
 	delete[] qi;
@@ -69,7 +68,7 @@ Triangle::~Triangle() {
 
 void Triangle::Init() {
 	int 	i;
-	double 	tmp[6][2];
+	double 	tmp[12][2];
 
 	/* calculate the area */
 	area = 0.5*fabs( (b[0] - a[0])*(c[1] - a[1]) - (b[1] - a[1])*(c[0] - a[0]) );
@@ -79,13 +78,8 @@ void Triangle::Init() {
 
 		tmp[0][0] = 1.0/3.0;
 		tmp[0][1] = 1.0/3.0;
-
-		qi[0][0] = a[0]*tmp[0][0] + b[0]*tmp[0][1] + c[0]*(1.0 - tmp[0][0] - tmp[0][1]);
-		qi[0][1] = a[1]*tmp[0][0] + b[1]*tmp[0][1] + c[1]*(1.0 - tmp[0][0] - tmp[0][1]);
 	}
 	else if( order == 2 ) {
-		int i;
-
 		wi[0] = 1.0/3;
 		wi[1] = 1.0/3;
 		wi[2] = 1.0/3;
@@ -98,14 +92,8 @@ void Triangle::Init() {
 
 		tmp[2][0] = 1.0/6.0;
 		tmp[2][1] = 1.0/6.0;
-
-		for( i = 0; i < nQuadPts; i++ ) {
-			/* generate the coordinates of the quadrature points from the barycentric coordinates */
-			qi[i][0] = a[0]*tmp[i][0] + b[0]*tmp[i][1] + c[0]*(1.0 - tmp[i][0] - tmp[i][1]);
-			qi[i][1] = a[1]*tmp[i][0] + b[1]*tmp[i][1] + c[1]*(1.0 - tmp[i][0] - tmp[i][1]);
-		}
 	}
-	else if( order == 3 ) {
+	else if( order == 3 || order == 4 ) {
 		wi[0] = 0.109951743655321843;
 		wi[1] = 0.109951743655321857;
  		wi[2] = 0.109951743655321885;
@@ -126,11 +114,83 @@ void Triangle::Init() {
  		tmp[3][1] = 0.445948490915964113;
  		tmp[4][1] = 0.108103018168070275;
  		tmp[5][1] = 0.445948490915965612;
+	}
+	else if( order == 5 ) {
+		wi[0] = 1.31356049751916795e-02;
+		wi[1] = 1.31358306034076201e-02;
+		wi[2] = 1.37081973800151392e-02;
+		wi[3] = 1.17419193291163376e-01;
+		wi[4] = 1.17420611913379477e-01;
+		wi[5] = 1.24012589655715613e-01;
+		wi[6] = 1.24015246126072495e-01;
+		wi[7] = 1.25930230276426303e-01;
+		wi[8] = 1.25933026682913923e-01;
+		wi[9] = 2.25289469095714456e-01;
 
-		for( i = 0; i < nQuadPts; i++ ) {
-			qi[i][0] = a[0]*tmp[i][0] + b[0]*tmp[i][1] + c[0]*(1.0 - tmp[i][0] - tmp[i][1]);
-			qi[i][1] = a[1]*tmp[i][0] + b[1]*tmp[i][1] + c[1]*(1.0 - tmp[i][0] - tmp[i][1]);
-		}
+		tmp[0][0] = 0.00000000000000000e+00;
+		tmp[1][0] = 1.00000000000000000e+00;
+		tmp[2][0] = 0.00000000000000000e+00;
+		tmp[3][0] = 2.67327353118498978e-01;
+		tmp[4][0] = 6.72817552946136210e-01;
+		tmp[5][0] = 6.49236350054349654e-02;
+		tmp[6][0] = 6.71649853904175198e-01;
+		tmp[7][0] = 6.54032456800035522e-02;
+		tmp[8][0] = 2.69376706913982855e-01;
+		tmp[9][0] = 3.38673850389605513e-01;
+
+		tmp[0][1] = 1.00000000000000000e+00;
+		tmp[1][1] = 0.00000000000000000e+00;
+		tmp[2][1] = 0.00000000000000000e+00;
+		tmp[3][1] = 6.72819921871012694e-01;
+		tmp[4][1] = 2.67328859948191944e-01;
+		tmp[5][1] = 6.71653011149382917e-01;
+		tmp[6][1] = 6.49251690028951334e-02;
+		tmp[7][1] = 2.69378936645285116e-01;
+		tmp[8][1] = 6.54054874919145490e-02;
+		tmp[9][1] = 3.38679989302702156e-01;
+	}
+	else if( order == 6 ) {
+		wi[0]  = 3.80680718529555623e-02;
+		wi[1]  = 3.83793553077528410e-02;
+		wi[2]  = 4.62004567445618367e-02;
+		wi[3]  = 5.34675894441989999e-02;
+		wi[4]  = 8.37558269657456833e-02;
+		wi[5]  = 1.01644833025517037e-01;
+		wi[6]  = 1.01861524461366940e-01;
+		wi[7]  = 1.11421831660001677e-01;
+		wi[8]  = 1.12009450262946106e-01;
+		wi[9]  = 1.24787571437558295e-01;
+		wi[10] = 1.88403488837394911e-01;
+
+		tmp[0][0]  = 5.72549866774768601e-02;
+		tmp[1][0]  = 8.95362640024579104e-01;
+		tmp[2][0]  = 6.84475748456514044e-01;
+		tmp[3][0]  = 6.87462559150295305e-02;
+		tmp[4][0]  = 6.15676205575839575e-01;
+		tmp[5][0]  = 6.27946141197789465e-01;
+		tmp[6][0]  = 6.29091383418635686e-02;
+		tmp[7][0]  = 6.83782119205099126e-02;
+		tmp[8][0]  = 2.87529458374392255e-01;
+		tmp[9][0]  = 3.28783556413134614e-01;
+		tmp[10][0] = 3.12290405013644801e-01;
+
+		tmp[0][1]  = 8.95498146789879490e-01;
+		tmp[1][1]  = 6.18282212503219533e-02;
+		tmp[2][1]  = 2.33437384976827311e-02;
+		tmp[3][1]  = 6.00302757472630025e-02;
+		tmp[4][1]  = 3.33461808341377175e-01;
+		tmp[5][1]  = 1.59189185992151483e-01;
+		tmp[6][1]  = 6.55295093705452469e-01;
+		tmp[7][1]  = 3.09117685428267230e-01;
+		tmp[8][1]  = 6.36426509179620181e-01;
+		tmp[9][1]  = 7.70240056424634223e-02;
+		tmp[10][1] = 3.52344786445899505e-01;
+	}
+
+	/* generate the coordinates of the quadrature points from the barycentric coordinates */
+	for( i = 0; i < nq; i++ ) {
+		qi[i][0] = a[0]*tmp[i][0] + b[0]*tmp[i][1] + c[0]*(1.0 - tmp[i][0] - tmp[i][1]);
+		qi[i][1] = a[1]*tmp[i][0] + b[1]*tmp[i][1] + c[1]*(1.0 - tmp[i][0] - tmp[i][1]);
 	}
 }
 

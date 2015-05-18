@@ -87,7 +87,7 @@ double Field::Integrate() {
 		poly = grid->polys[i];
 		for( j = 0; j < poly->n; j++ ) {
 			tri = poly->tris[j];
-			for( k = 0; k < tri->nQuadPts; k++ ) {
+			for( k = 0; k < tri->nq; k++ ) {
 				val = basis[i]->EvalFull( tri->qi[k] );
 				vol += val*tri->wi[k]*tri->area;
 			}
@@ -107,7 +107,7 @@ double Field::L1Error( Func* analytic, bool doNorm ) {
 		poly = grid->polys[i];
 		for( j = 0; j < poly->n; j++ ) {
 			tri = poly->tris[j];
-			for( k = 0; k < tri->nQuadPts; k++ ) {
+			for( k = 0; k < tri->nq; k++ ) {
 				val = basis[i]->EvalFull( tri->qi[k] );
 				ana = analytic( tri->qi[k] );
 				weight = tri->wi[k]*tri->area;
@@ -135,7 +135,7 @@ double Field::L2Error( Func* analytic, bool doNorm ) {
 		poly = grid->polys[i];
 		for( j = 0; j < poly->n; j++ ) {
 			tri = poly->tris[j];
-			for( k = 0; k < tri->nQuadPts; k++ ) {
+			for( k = 0; k < tri->nq; k++ ) {
 				val = basis[i]->EvalFull( tri->qi[k] );
 				ana = analytic( tri->qi[k] );
 				weight = tri->wi[k]*tri->area;
@@ -230,7 +230,7 @@ void Field::WriteDeriv( string fname, int tstep, int dim ) {
 		poly = grid->polys[i];
 		for( j = 0; j < poly->n; j++ ) {
 			tri = poly->tris[j];
-			for( k = 0; k < tri->nQuadPts; k++ ) {
+			for( k = 0; k < tri->nq; k++ ) {
 				file << basis[i]->EvalDerivFull( tri->qi[k], dim ) << endl;
 			}
 		}
