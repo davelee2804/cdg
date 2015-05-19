@@ -16,7 +16,42 @@ Basis::Basis( Polygon* _poly, int _order, double* _origin, double _dx, double _d
 	origin[0] = _origin[0];
 	origin[1] = _origin[1];
 
-	nFuncs = order*order;
+	if( order == 1 ) {
+		nFuncs = 1;
+	}
+	else if( order == 2 ) {
+		nFuncs = 3;
+	}
+	else if( order == 3 ) {
+		nFuncs = 6;
+	}
+	else {
+		cout << "ERROR: basis order " << order << " not yet implemented..." << endl;
+		abort(); 
+	}
+	xPower = new int[nFuncs];
+	yPower = new int[nFuncs];
+
+	xPower[0] = yPower[0] = 0;
+	if( order == 2 ) {
+		xPower[1] = 1;
+		xPower[2] = 0;
+		yPower[1] = 0;
+		yPower[2] = 1;
+	}
+	if( order == 3 ) {
+		xPower[1] = 1;
+		xPower[2] = 0;
+		xPower[3] = 2;
+		xPower[4] = 1;
+		xPower[5] = 0;
+
+		yPower[1] = 0;
+		yPower[2] = 1;
+		yPower[3] = 0;
+		yPower[4] = 1;
+		yPower[5] = 2;
+	}
 
 	dxInv = 1.0/_dx;
 	dyInv = 1.0/_dy;
@@ -35,10 +70,12 @@ Basis::~Basis() {
 	delete[] ci;
 	delete[] scale;
 	delete[] mean;
+	delete[] xPower;
+	delete[] yPower;
 }
 
 void Basis::Init() {
-	int        i, j, k, xPower, yPower;
+	int        i, j, k;
 	double     fac1, fac2, weight;
 	Triangle*  tri;
 
@@ -46,19 +83,17 @@ void Basis::Init() {
 	scale[0] = 1.0;
 	mean[0] = 0.0;
 	for( i = 1; i < nFuncs; i++ ) {
-		xPower = i%order;
-		yPower = i/order;
 		fac1 = fac2 = 1.0;
 
-		for( j = 1; j <= xPower; j++ ) {
+		for( j = 1; j <= xPower[i]; j++ ) {
 			fac1 *= j;
 		}
-		for( k = 1; k <= yPower; k++ ) {
+		for( k = 1; k <= yPower[i]; k++ ) {
 			fac2 *= k;
 		}
 
 		/* normalise coefficients to improve condition number of the matrix */
-		scale[i] = pow( dxInv, xPower )*pow( dyInv, yPower )/fac1/fac2;
+		scale[i] = pow( dxInv, xPower[i] )*pow( dyInv, yPower[i] )/fac1/fac2;
 		
 		/* remove mean component so higher order basis functions are massless */
 		mean[i] = 0.0;
@@ -66,7 +101,7 @@ void Basis::Init() {
 			tri = poly->tris[j];
 			for( k = 0; k < tri->nq; k++ ) {
 				weight = tri->wi[k]*tri->area;
-				mean[i] += weight*pow( tri->qi[k][0] - origin[0], xPower )*pow( tri->qi[k][1] - origin[1], yPower );
+				mean[i] += weight*pow( tri->qi[k][0] - origin[0], xPower[i] )*pow( tri->qi[k][1] - origin[1], yPower[i] );
 			}
 		}
 		mean[i] /= poly->Area();
@@ -74,33 +109,30 @@ void Basis::Init() {
 }
 
 double Basis::EvalIJ( double* pt, int i ) {
-	int			xPower = i%order;
-	int			yPower = i/order;
-
 	if( i == 0 ) {
 		return 1.0;
 	}
 
-	return scale[i]*( pow( pt[0] - origin[0], xPower )*pow( pt[1] - origin[1], yPower ) - mean[i] );
+	return scale[i]*( pow( pt[0] - origin[0], xPower[i] )*pow( pt[1] - origin[1], yPower[i] ) - mean[i] );
 }
 
 double Basis::EvalDerivIJ( double* pt, int i, int dim ) {
-	int			xPower = i%order;
-	int			yPower = i/order;	
-	int			coeff = ( dim == 0 ) ? xPower : yPower;
+	int xp    = xPower[i];
+	int yp    = yPower[i];
+	int coeff = ( dim == 0 ) ? xp : yp;
 
 	if( i == 0 ) {
 		return 0.0;
 	}
 
-	if( dim == 0 && xPower > 0 ) {
-		xPower--;
+	if( dim == 0 && xp > 0 ) {
+		xp--;
 	}
-	else if( dim == 1 && yPower > 0 ) {
-		yPower--;
+	else if( dim == 1 && yp > 0 ) {
+		yp--;
 	}
 
-	return scale[i]*( coeff*pow( pt[0] - origin[0], xPower )*pow( pt[1] - origin[1], yPower ) - mean[i] );
+	return scale[i]*( coeff*pow( pt[0] - origin[0], xp )*pow( pt[1] - origin[1], yp ) - mean[i] );
 }
 
 double Basis::EvalConst( double* pt ) {

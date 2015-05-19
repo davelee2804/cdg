@@ -27,11 +27,6 @@ void Limiter::Apply() {
 	int 	pi, bi;
 	double 	alpha_o, alpha_x, alpha_y;
 	Field*	phiTemp	= NULL;
-	int		xoInd	= 1;
-	int		yoInd	= phi->basis[0]->order;
-	int		xxInd	= 2;
-	int		xyInd	= phi->basis[0]->order + 1;
-	int		yyInd	= 2*phi->basis[0]->order;
 
 	if( !order ) {
 		return;
@@ -51,18 +46,18 @@ void Limiter::Apply() {
 			for( bi = 1; bi < phi->basis[pi]->nFuncs; bi++ ) {
 				phiTemp->basis[pi]->ci[bi] = 0.0;
 			}
-			phiTemp->basis[pi]->ci[xoInd] = alpha_o*phi->basis[pi]->ci[xoInd];
-			phiTemp->basis[pi]->ci[yoInd] = alpha_o*phi->basis[pi]->ci[yoInd];
+			phiTemp->basis[pi]->ci[1] = alpha_o*phi->basis[pi]->ci[1];
+			phiTemp->basis[pi]->ci[2] = alpha_o*phi->basis[pi]->ci[2];
 		}
 		if( order == 2 && ( alpha_o < 1.0 - 1.0e-6 || alpha_x < 1.0 - 1.0e-6 ) ) {
 			for( bi = 1; bi < phi->basis[pi]->nFuncs; bi++ ) {
 				phiTemp->basis[pi]->ci[bi] = 0.0;
 			}
-			phiTemp->basis[pi]->ci[xoInd] = alpha_o*phi->basis[pi]->ci[xoInd];
-			phiTemp->basis[pi]->ci[yoInd] = alpha_o*phi->basis[pi]->ci[yoInd];
-			phiTemp->basis[pi]->ci[xxInd] = alpha_x*phi->basis[pi]->ci[xxInd];
-			phiTemp->basis[pi]->ci[xyInd] = alpha_x*phi->basis[pi]->ci[xyInd];
-			phiTemp->basis[pi]->ci[yyInd] = alpha_x*phi->basis[pi]->ci[yyInd];
+			phiTemp->basis[pi]->ci[1] = alpha_o*phi->basis[pi]->ci[1];
+			phiTemp->basis[pi]->ci[2] = alpha_o*phi->basis[pi]->ci[2];
+			phiTemp->basis[pi]->ci[3] = alpha_x*phi->basis[pi]->ci[3];
+			phiTemp->basis[pi]->ci[4] = alpha_x*phi->basis[pi]->ci[4];
+			phiTemp->basis[pi]->ci[5] = alpha_x*phi->basis[pi]->ci[5];
 		}
 	}
 

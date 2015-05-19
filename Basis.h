@@ -10,6 +10,8 @@ class Basis {
 		double*		scale;
 		double*		mean;
 		double 		origin[2];
+		int*		xPower;
+		int*		yPower;
 		Polygon*	poly;
 		void		Init();
 		double		EvalIJ( double* pt, int i );
