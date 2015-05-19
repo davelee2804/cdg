@@ -305,20 +305,37 @@ void Grid::UpdateEdges() {
 }
 
 void Grid::UpdatePolys() {
-	int i, j, pi = 0;
+	Polygon* poly;
+	int i, j, k, pi = 0;
 
 	for( j = 0; j < ny; j++ ) {
 		for( i = 0; i < nx; i++ ) {
-			polys[pi]->verts[0][0] = verts[(j+0)*(nx+1)+(i+0)][0];
-			polys[pi]->verts[0][1] = verts[(j+0)*(nx+1)+(i+0)][1];
-			polys[pi]->verts[1][0] = verts[(j+1)*(nx+1)+(i+0)][0];
-			polys[pi]->verts[1][1] = verts[(j+1)*(nx+1)+(i+0)][1];
-			polys[pi]->verts[2][0] = verts[(j+1)*(nx+1)+(i+1)][0];
-			polys[pi]->verts[2][1] = verts[(j+1)*(nx+1)+(i+1)][1];
-			polys[pi]->verts[3][0] = verts[(j+0)*(nx+1)+(i+1)][0];
-			polys[pi]->verts[3][1] = verts[(j+0)*(nx+1)+(i+1)][1];
-			polys[pi]->GenOrigin();
-			pi++;
+			poly = polys[pi++];
+			poly->verts[0][0] = verts[(j+0)*(nx+1)+(i+0)][0];
+			poly->verts[0][1] = verts[(j+0)*(nx+1)+(i+0)][1];
+			poly->verts[1][0] = verts[(j+1)*(nx+1)+(i+0)][0];
+			poly->verts[1][1] = verts[(j+1)*(nx+1)+(i+0)][1];
+			poly->verts[2][0] = verts[(j+1)*(nx+1)+(i+1)][0];
+			poly->verts[2][1] = verts[(j+1)*(nx+1)+(i+1)][1];
+			poly->verts[3][0] = verts[(j+0)*(nx+1)+(i+1)][0];
+			poly->verts[3][1] = verts[(j+0)*(nx+1)+(i+1)][1];
+			poly->GenOrigin();
+			for( k = 0; k < poly->n; k++ ) {
+				/* update the polygon edges */
+				poly->edges[k]->v1[0] = poly->verts[k][0];
+				poly->edges[k]->v1[1] = poly->verts[k][1];
+				poly->edges[k]->v2[0] = poly->verts[(k+1)%poly->n][0];
+				poly->edges[k]->v2[1] = poly->verts[(k+1)%poly->n][1];
+				poly->edges[k]->Init();
+				/* update the polygon triangles */
+				poly->tris[k]->a[0] = poly->verts[k][0];
+				poly->tris[k]->a[1] = poly->verts[k][1];
+				poly->tris[k]->b[0] = poly->verts[(k+1)%poly->n][0];
+				poly->tris[k]->b[1] = poly->verts[(k+1)%poly->n][1];
+				poly->tris[k]->c[0] = poly->origin[0];
+				poly->tris[k]->c[1] = poly->origin[1];
+				poly->tris[k]->Init();
+			}
 		}
 	}
 }
@@ -338,6 +355,23 @@ void Grid::UpdateTris() {
 			tri->b[1] = poly->verts[(j+1)%poly->n][1];
 			tri->c[0] = poly->origin[0];
 			tri->c[1] = poly->origin[1];
+			tri->Init();
+			/* update the triangle edges */
+			tri->ab->v1[0] = tri->a[0];
+			tri->ab->v1[1] = tri->a[1];
+			tri->ab->v2[0] = tri->b[0];
+			tri->ab->v2[1] = tri->b[1];
+
+			tri->bc->v1[0] = tri->b[0];
+			tri->bc->v1[1] = tri->b[1];
+			tri->bc->v2[0] = tri->c[0];
+			tri->bc->v2[1] = tri->c[1];
+
+			tri->ca->v1[0] = tri->c[0];
+			tri->ca->v1[1] = tri->c[1];
+			tri->ca->v2[0] = tri->a[0];
+			tri->ca->v2[1] = tri->a[1];
+
 			tri->Init();
 		}
 	}
