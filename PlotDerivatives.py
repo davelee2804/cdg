@@ -22,7 +22,7 @@ def func_dx( x, y ):
 	yo = 0.5*np.sin( theta )
 	r2 = (x-xo)*(x-xo) + (y-yo)*(y-yo)
 	if np.sqrt( r2 ) < 0.4:
-		return -40.0*(x - xo)*np.exp( -40.0*r2 )
+		return -40.0*2.0*(x - xo)*np.exp( -40.0*r2 )
 	else:
 		return 0.0
 
@@ -32,7 +32,7 @@ def func_dy( x, y ):
 	yo = 0.5*np.sin( theta )
 	r2 = (x-xo)*(x-xo) + (y-yo)*(y-yo)
 	if np.sqrt( r2 ) < 0.4:
-		return -40.0*(y - yo)*np.exp( -40.0*r2 )
+		return -40.0*2.0*(y - yo)*np.exp( -40.0*r2 )
 	else:
 		return 0.0
 

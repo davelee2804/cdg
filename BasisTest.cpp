@@ -14,8 +14,8 @@
 
 using namespace std;
 
-#define QUAD_ORDER 2
-#define BASIS_ORDER 2
+#define QUAD_ORDER 6
+#define BASIS_ORDER 3
 
 double func( double* x ) {
 	return cos( 0.5*M_PI*x[0] )*cos( 0.5*M_PI*x[1] );
@@ -48,16 +48,18 @@ void Distort( double* pt ) {
 int main() {
 	int			nx			= 1;
 	int			ny			= 1;
-	int			i, j;
+	int			i, j, k, l;
 	Grid*		grid;
 	Field*		field;
+	Polygon*	poly;
+	Triangle*	tri;
 	double		ans			= 16.0/M_PI/M_PI;
 	double		vol;
 	CDG*		cdg;
 	int			nBasis		= BASIS_ORDER*BASIS_ORDER;
 	double		phi_xn, phi_yn, phi_xa, phi_ya;
 	double		err_x, err_y, norm_x, norm_y;
-	double		point[2];
+	double		weight;
 
 	grid = new Grid( 1, 1, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
 	field = new Field( grid );
@@ -104,7 +106,7 @@ int main() {
 	cout << "testing the basis derivative function..." << endl;
 	nx = ny = 1;
 	for( i = 0; i < 8; i++ ) {
-		grid = new Grid( nx, ny, -1.0, -1.0, +1.0, +1.0, 3, 3, true );
+		grid = new Grid( nx, ny, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
 		field = new Field( grid );
 
 		cdg = new CDG( field, NULL, NULL, NULL, NULL );
@@ -112,19 +114,24 @@ int main() {
 
 		err_x = err_y = norm_x = norm_y = 0.0;
 
-		for( j = 0; j < 3*3; j++ ) {
-			point[0] = grid->minx + (i%grid->nx)*grid->dx + (0.5 + j%3)/3*grid->dx;
-			point[1] = grid->miny + (i/grid->nx)*grid->dy + (0.5 + j/3)/3*grid->dy;
+		for( j = 0; j < grid->nPolys; j++ ) {
+			poly = grid->polys[j];
+			for( k = 0; k < poly->n; k++ ) {
+				tri = poly->tris[k];
+				for( l = 0; l < tri->nq; l++ ) {
+					weight = tri->wi[l]*tri->area;
 
-			phi_xn = field->basis[i]->EvalDerivFull( point, 0 );
-			phi_yn = field->basis[i]->EvalDerivFull( point, 1 );
-			phi_xa = dxFunc( point );
-			phi_ya = dyFunc( point );
+					phi_xn = field->basis[j]->EvalDerivFull( tri->qi[l], 0 );
+					phi_yn = field->basis[j]->EvalDerivFull( tri->qi[l], 1 );
+					phi_xa = dxFunc( tri->qi[l] );
+					phi_ya = dyFunc( tri->qi[l] );
 
-			err_x += fabs(phi_xa - phi_xn);
-			err_y += fabs(phi_ya - phi_yn);
-			norm_x += fabs( phi_xa );
-			norm_y += fabs( phi_ya );
+					err_x += weight*fabs(phi_xa - phi_xn);
+					err_y += weight*fabs(phi_ya - phi_yn);
+					norm_x += weight*fabs( phi_xa );
+					norm_y += weight*fabs( phi_ya );
+				}
+			}
 		}
 
 		cout << err_x/norm_x << "\t" << err_y/norm_y << endl;
