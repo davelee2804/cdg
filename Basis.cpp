@@ -50,10 +50,10 @@ void Basis::Init() {
 		yPower = i/order;
 		fac1 = fac2 = 1.0;
 
-		for( j = 1; j < xPower; j++ ) {
+		for( j = 1; j <= xPower; j++ ) {
 			fac1 *= j;
 		}
-		for( k = 1; k < yPower; k++ ) {
+		for( k = 1; k <= yPower; k++ ) {
 			fac2 *= k;
 		}
 
