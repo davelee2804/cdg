@@ -30,16 +30,16 @@ CDG::~CDG() {
 }
 
 void CDG::InitBetaIJInv( Func* func ) {
-	int 		i, j, k, l, pi;
-	Grid* 		grid 		= phi->grid;
-	Polygon*	poly;
-	Triangle*	tri;
-	Basis*		basis;
-	int			nBasis		= phi->basis[0]->nFuncs;
-	double		fj[nBasis];
-	double		weight, *coord;
-	double		beta_ij[nBasis*nBasis];
-	double		volErr;
+	int        i, j, k, l, pi;
+	Grid*      grid   = phi->grid;
+	Polygon*   poly;
+	Triangle*  tri;
+	Basis*     basis;
+	int        nBasis = phi->basis[0]->nFuncs;
+	double     fj[nBasis];
+	double     weight, *coord;
+	double     beta_ij[nBasis*nBasis];
+	double     volErr;
 
 	if( betaInv_ij == NULL ) {
 		betaInv_ij = new double*[grid->nPolys];
@@ -124,16 +124,16 @@ void CDG::Advect( double dt ) {
 }
 
 void CDG::BasisProjection( int kp, int k, double* Pij ) {
-	int tri_i, quad_i, basis_m, basis_j;
-	Grid* 		grid 		= phi->grid;
-	Polygon* 	poly 		= grid->polys[kp];
-	Basis*		basis_k		= phi->basis[k];
-	Basis*		basis_kp	= phi->basis[kp];
-	Triangle* 	tri;
-	int			nBasis 		= grid->basisOrder*grid->basisOrder;
-	int			nBasis2		= nBasis*nBasis;
-	double		beta_mj[nBasis2];
-	double		weight, *coord;
+	int         tri_i, quad_i, basis_m, basis_j;
+	Grid*       grid        = phi->grid;
+	Polygon*    poly        = grid->polys[kp];
+	Basis*      basis_k     = phi->basis[k];
+	Basis*      basis_kp    = phi->basis[kp];
+	Triangle*   tri;
+	int         nBasis      = phi->basis[0]->nFuncs;
+	int         nBasis2     = nBasis*nBasis;
+	double      beta_mj[nBasis2];
+	double      weight, *coord;
 
 	for( basis_j = 0; basis_j < nBasis2; basis_j++ ) {
 		beta_mj[basis_j] = 0.0;
