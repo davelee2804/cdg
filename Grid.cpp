@@ -361,18 +361,19 @@ void Grid::UpdateTris() {
 			tri->ab->v1[1] = tri->a[1];
 			tri->ab->v2[0] = tri->b[0];
 			tri->ab->v2[1] = tri->b[1];
+			tri->ab->Init();
 
 			tri->bc->v1[0] = tri->b[0];
 			tri->bc->v1[1] = tri->b[1];
 			tri->bc->v2[0] = tri->c[0];
 			tri->bc->v2[1] = tri->c[1];
+			tri->bc->Init();
 
 			tri->ca->v1[0] = tri->c[0];
 			tri->ca->v1[1] = tri->c[1];
 			tri->ca->v2[0] = tri->a[0];
 			tri->ca->v2[1] = tri->a[1];
-
-			tri->Init();
+			tri->ca->Init();
 		}
 	}
 }
