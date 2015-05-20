@@ -33,24 +33,24 @@ double uy( double* p ) {
 }
 
 double p0( double* p ) {
-	double	xo	= 0.5*cos( 0.25*M_PI );
-	double	yo	= 0.5*sin( 0.25*M_PI );
-	double	r2	= ( p[0] - xo )*( p[0] - xo ) + ( p[1] - yo )*( p[1] - yo );
+	double xo = 0.5*cos( 0.25*M_PI );
+	double yo = 0.5*sin( 0.25*M_PI );
+	double r2 = ( p[0] - xo )*( p[0] - xo ) + ( p[1] - yo )*( p[1] - yo );
 	if( sqrt( r2 ) < 0.40 ) return exp(-40.0*r2);
 	return 0.0;
 }
 
 double p1( double* p ) {
-	double	xo	= 0.5*cos( 0.75*M_PI );
-	double	yo	= 0.5*sin( 0.75*M_PI );
-	double	r2	= ( p[0] - xo )*( p[0] - xo ) + ( p[1] - yo )*( p[1] - yo );
+	double xo = 0.5*cos( 0.75*M_PI );
+	double yo = 0.5*sin( 0.75*M_PI );
+	double r2 = ( p[0] - xo )*( p[0] - xo ) + ( p[1] - yo )*( p[1] - yo );
 	if( sqrt( r2 ) < 0.40 ) return exp(-40.0*r2);
 	return 0.0;
 }
 
 void TestQuadArea( Polygon* poly ) {
-	double		side[2], p[2], q[2], s2[4], p2, q2, det, a1, a2;
-	int			i;
+	double side[2], p[2], q[2], s2[4], p2, q2, det, a1, a2;
+	int    i;
 
 	for( i = 0; i < 4; i++ ) {
 		side[0] = poly->verts[(i+1)%4][0] - poly->verts[i][0];
@@ -109,16 +109,16 @@ void WriteVelocity( Grid* grid ) {
 }
 
 int main() {
-	Grid*		grid 	= new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
-	Field*		phi		= new Field( grid );
-	CDG*		cdg;
-	int			i;
-	int			start	= 0;
-	int			nsteps	= 64*4;
-	int			dump	= 8;
-	double		dt		= 0.5*M_PI/nsteps;
-	Field*		ans		= new Field( grid );
-	Limiter*	lim		= new Limiter( phi );
+	Grid*     grid      = new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
+	Field*    phi       = new Field( grid );
+	CDG*      cdg;
+	int       i;
+	int       start     = 0;
+	int       nsteps    = 64*4;
+	int       dump      = 8;
+	double    dt        = 0.5*M_PI/nsteps;
+	Field*    ans       = new Field( grid );
+	Limiter*  lim       = new Limiter( phi );
 
 #ifdef DISTORT_MESH
 	srand( 7919 );

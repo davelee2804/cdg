@@ -202,9 +202,9 @@ void Field::Write( string fname, int tstep, int n ) {
 }
 
 void Field::WriteBasis( string fname, int tstep ) {
-	ofstream 	file;
-	char 		filename[80];
-	int 		i, j;
+	ofstream  file;
+	char      filename[80];
+	int       i, j;
 
 	sprintf( filename, "output/%s_basis.%.4u.txt", fname.c_str(), tstep );
 	file.open( filename );

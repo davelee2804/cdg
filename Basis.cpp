@@ -176,10 +176,10 @@ double Basis::EvalWithCoeffs( double* pt, double* coeffs ) {
 }
 
 bool Basis::TestMean( double* volErr ) {
-	int 		i, j, k;
-	double		weight;
-	Triangle*	tri;
-	bool		ok;
+	int        i, j, k;
+	double     weight;
+	Triangle*  tri;
+	bool       ok;
 
 	*volErr = 0.0;
 

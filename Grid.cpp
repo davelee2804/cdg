@@ -8,20 +8,20 @@
 #include "Grid.h"
 
 Grid::Grid( int _nx, int _ny, double _minx, double _miny, double _maxx, double _maxy, int _quadOrder, int _basisOrder, bool _internal ) {
-	int 		i, j, ei = 0;
-	double 		x, y;
-	double** 	polyVerts;
-	double		*p1, *p2;
+	int       i, j, ei = 0;
+	double    x, y;
+	double**  polyVerts;
+	double    *p1, *p2;
 
-	nx = _nx;
-	ny = _ny;
+	nx   = _nx;
+	ny   = _ny;
 	minx = _minx;
 	miny = _miny;
 	maxx = _maxx;
 	maxy = _maxy;
-	quadOrder = _quadOrder;
+	quadOrder  = _quadOrder;
 	basisOrder = _basisOrder;
-	internal = _internal;
+	internal   = _internal;
 
 	dx = (maxx - minx)/nx;
 	dy = (maxy - miny)/ny;
@@ -184,10 +184,10 @@ void Grid::EdgeIndexToCoord( int ei, int* norm, int* xi, int* yj ) {
 }
 
 void Grid::GetEdgePolys( int ei, Polygon* p1, Polygon* p2 ) {
-	int norm = ei/((nx+1)*ny);		// norm = 0: edge is normal to x, norm = 1: edge is normal to y
+	int norm  = ei/((nx+1)*ny);		// norm = 0: edge is normal to x, norm = 1: edge is normal to y
 	int	dummy = ei - norm*(nx+1)*ny;
-	int xi = ( norm == 0 ) ? dummy%(nx+1) : dummy%nx;
-	int yj = ( norm == 0 ) ? dummy/(nx+1) : dummy/nx;
+	int xi    = ( norm == 0 ) ? dummy%(nx+1) : dummy%nx;
+	int yj    = ( norm == 0 ) ? dummy/(nx+1) : dummy/nx;
 
 	/* polygons left and right */
 	if( norm == 0 ) {
@@ -246,9 +246,9 @@ bool Grid::GetEdgePolyInds( int ei, int* pinds ) {
 }
 
 void Grid::GetPolyEdgeInds( int pi, int* einds ) {
-	int xi 		= pi%nx;
-	int yj 		= pi/nx;
-	int shift 	= (nx+1)*ny;
+	int xi    = pi%nx;
+	int yj    = pi/nx;
+	int shift = (nx+1)*ny;
 
 	einds[0] = (yj+0)*(nx+1)+(xi+0);
 	einds[1] = (yj+1)*(nx+0)+(xi+0) + shift;
@@ -306,7 +306,7 @@ void Grid::UpdateEdges() {
 
 void Grid::UpdatePolys() {
 	Polygon* poly;
-	int i, j, k, pi = 0;
+	int      i, j, k, pi = 0;
 
 	for( j = 0; j < ny; j++ ) {
 		for( i = 0; i < nx; i++ ) {
@@ -341,9 +341,9 @@ void Grid::UpdatePolys() {
 }
 
 void Grid::UpdateTris() {
-	int 		i, j;
-	Polygon* 	poly;
-	Triangle*	tri;
+	int        i, j;
+	Polygon*   poly;
+	Triangle*  tri;
 
 	for( i = 0; i < nPolys; i++ ) {
 		poly = polys[i];
@@ -379,11 +379,11 @@ void Grid::UpdateTris() {
 }
 
 void Grid::Write( string fname, int n ) {
-	ofstream 	file;
-	char 		filename[80];
-	int 		i, j;
-	double*		xCoords	= new double[n];
-	double*		yCoords	= new double[n];
+	ofstream  file;
+	char      filename[80];
+	int       i, j;
+	double*   xCoords  = new double[n];
+	double*   yCoords  = new double[n];
 
 	if( internal ) {
 		for( i = 0; i < n; i++ ) {
