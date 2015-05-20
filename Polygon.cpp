@@ -59,11 +59,11 @@ int Polygon::AddPoint( double** pts, int np, double* pt ) {
 #define MAX_POLY 10
 
 Polygon* Polygon::Intersection( Polygon* poly ) {
-	int 		vi, vj, iOffset = -1, jOffset = -1, pSize = 0;
-	double		**polyVerts;
-	double		ijInt[2], jiInt[2];
-	Polygon*	intPoly	= NULL;
-	bool		allInside;
+	int         vi, vj, iOffset = -1, jOffset = -1, pSize = 0;
+	double      **polyVerts;
+	double      ijInt[2], jiInt[2];
+	Polygon*    intPoly	= NULL;
+	bool        allInside;
 
 	polyVerts = new double*[MAX_POLY];
 	for( vi = 0; vi < MAX_POLY; vi++ ) {
@@ -172,9 +172,9 @@ Polygon* Polygon::Intersection( Polygon* poly ) {
 
 /* reqires that polygon vertices are consistently ordered clockwise */
 bool Polygon::IsInside( double* pt ) {
-	int 		i;
-	double		edgeCrossOrig, edgeCrossPt;
-	Triangle*	tri;
+	int         i;
+	double      edgeCrossOrig, edgeCrossPt;
+	Triangle*   tri;
 
 	for( i = 0; i < n; i++ ) {
 		/* is the point shared by both polygons? */
@@ -209,8 +209,8 @@ void Polygon::GenOrigin() {
 }
 
 double Polygon::Area() {
-	double 	area 	= 0.0;
-	int 	tri_i;
+	double  area = 0.0;
+	int     tri_i;
 
 	for( tri_i = 0; tri_i < n; tri_i++ ) {
 		area += tris[tri_i]->area;

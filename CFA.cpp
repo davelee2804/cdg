@@ -43,10 +43,10 @@ CFA::~CFA() {
 }
 
 void CFA::Advect( double dt ) {
-	int		i, j;
-	Grid* 	grid	= phi->grid;
-	Grid*	preGrid = new Grid( grid->nx, grid->ny, grid->minx, grid->miny, grid->maxx, grid->maxy, grid->quadOrder, grid->basisOrder, grid->internal );
-	Field*	phiTemp = new Field( grid );
+	int     i, j;
+	Grid*   grid	= phi->grid;
+	Grid*   preGrid = new Grid( grid->nx, grid->ny, grid->minx, grid->miny, grid->maxx, grid->maxy, grid->quadOrder, grid->basisOrder, grid->internal );
+	Field*  phiTemp = new Field( grid );
 
 	CalcChars( preGrid, dt );
 	preGrid->UpdateEdges();
@@ -184,9 +184,9 @@ void CFA::CheckBounds( double* pt ) {
 }
 
 Polygon* CFA::CreatePreImage( int ei, Grid* grid, Grid* preGrid, int* into, int* from, int* pinds ) {
-	Edge* e1 = grid->edges[ei];
-	Edge* e2 = preGrid->edges[ei];
-	int left, right, norm;
+	Edge*    e1 = grid->edges[ei];
+	Edge*    e2 = preGrid->edges[ei];
+	int      left, right, norm;
 	Polygon* poly;
 
 	norm = ei/((grid->nx+1)*grid->ny);
@@ -257,10 +257,10 @@ Polygon* CFA::CreatePreImage( int ei, Grid* grid, Grid* preGrid, int* into, int*
 }
 
 void CFA::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
-	int 		ei, pi, pinds[6], into, from;
-	Grid*		grid	= phi->grid;
-	Polygon		*prePoly, *intPoly, *incPoly;
-	double		weight;
+	int         ei, pi, pinds[6], into, from;
+	Grid*       grid    = phi->grid;
+	Polygon     *prePoly, *intPoly, *incPoly;
+	double      weight;
 
 	for( ei = 0; ei < grid->nEdges; ei++ ) {
 		prePoly = CreatePreImage( ei, grid, preGrid, &into, &from, pinds );

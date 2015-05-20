@@ -102,10 +102,10 @@ void CDG::InitBetaIJInv( Func* func ) {
 }
 
 void CDG::Advect( double dt ) {
-	int 	i;
-	Grid* 	grid	= phi->grid;
-	Grid*	preGrid = new Grid( grid->nx, grid->ny, grid->minx, grid->miny, grid->maxx, grid->maxy, grid->quadOrder, grid->basisOrder, true );
-	Field*	phiTemp = new Field( grid );
+	int     i;
+	Grid*   grid    = phi->grid;
+	Grid*   preGrid = new Grid( grid->nx, grid->ny, grid->minx, grid->miny, grid->maxx, grid->maxy, grid->quadOrder, grid->basisOrder, true );
+	Field*  phiTemp = new Field( grid );
 
 	for( i = 0; i < grid->nVerts; i++ ) {
 		preGrid->verts[i][0] = grid->verts[i][0];
@@ -156,14 +156,14 @@ void CDG::BasisProjection( int kp, int k, double* Pij ) {
 }
 
 void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
-	int 		poly_i, edge_i, basis_i, tri_i, quad_i;
-	Grid*		grid	= phi->grid;
-	Polygon 	*prePoly, *intPoly, *incPoly;
-	Triangle*	tri;
-	int			pinds[6], into, from;
-	double 		weight, tracer, basis_into, basis_from;
-	double**	flux, qf[2];
-	int			nBasis	= phi->basis[0]->nFuncs;
+	int         poly_i, edge_i, basis_i, tri_i, quad_i;
+	Grid*       grid    = phi->grid;
+	Polygon     *prePoly, *intPoly, *incPoly;
+	Triangle*   tri;
+	int         pinds[6], into, from;
+	double      weight, tracer, basis_into, basis_from;
+	double**    flux, qf[2];
+	int         nBasis  = phi->basis[0]->nFuncs;
 
 	flux = new double*[grid->nPolys];
 	for( poly_i = 0; poly_i < grid->nPolys; poly_i++ ) {
