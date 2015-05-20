@@ -14,7 +14,7 @@
 
 using namespace std;
 
-#define QUAD_ORDER 6
+#define QUAD_ORDER 8
 #define BASIS_ORDER 3
 
 double func( double* x ) {
@@ -46,20 +46,19 @@ void Distort( double* pt ) {
  * 		c_0 + c_1.x + c_2.y + c_3.xy, 
  * evaluated at the quadrature points */
 int main() {
-	int			nx			= 1;
-	int			ny			= 1;
-	int			i, j, k, l;
-	Grid*		grid;
-	Field*		field;
-	Polygon*	poly;
-	Triangle*	tri;
-	double		ans			= 16.0/M_PI/M_PI;
-	double		vol;
-	CDG*		cdg;
-	int			nBasis		= BASIS_ORDER*BASIS_ORDER;
-	double		phi_xn, phi_yn, phi_xa, phi_ya;
-	double		err_x, err_y, norm_x, norm_y;
-	double		weight;
+	int        nx          = 1;
+	int        ny          = 1;
+	int        i, j, k, l;
+	Grid*      grid;
+	Field*     field;
+	Polygon*   poly;
+	Triangle*  tri;
+	double     ans         = 16.0/M_PI/M_PI;
+	double     vol;
+	CDG*       cdg;
+	double     phi_xn, phi_yn, phi_xa, phi_ya;
+	double     err_x, err_y, norm_x, norm_y;
+	double     weight;
 
 	grid = new Grid( 1, 1, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
 	field = new Field( grid );
@@ -70,7 +69,7 @@ int main() {
 	cdg->InitBetaIJInv( func );
 
 	cout << "basis coeffiecients: ";
-	for( i = 0; i < nBasis; i++ ) {
+	for( i = 0; i < field->basis[0]->nFuncs; i++ ) {
 		cout << field->basis[0]->ci[i] << " ";
 	}
 	cout << endl;

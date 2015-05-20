@@ -14,8 +14,8 @@
 
 using namespace std;
 
-#define QUAD_ORDER 2
-#define BASIS_ORDER 1
+#define QUAD_ORDER 8
+#define BASIS_ORDER 2
 
 typedef double ( Func ) ( double* x );
 
@@ -24,9 +24,9 @@ double func( double* x ) {
 }
 
 double Integrate( Field* field, Func* func ) {
-    double      vol		= 0.0;
+    double      vol	    = 0.0;
     int         pi, ti, qi;
-	Grid*		grid	= field->grid;
+	Grid*		grid    = field->grid;
     Polygon*    poly;
     Triangle*   tri;
 
@@ -43,14 +43,14 @@ double Integrate( Field* field, Func* func ) {
 }
 
 int main() {
-	int			nx			= 1;
-	int			ny			= 1;
-	int			i, j;
-	Grid*		grid;
-	Field*		field;
-	CDG*		cdg;
-	double		vol;
-	double		ans			= 16.0/M_PI/M_PI;
+	int      nx     = 1;
+	int      ny     = 1;
+	int      i, j;
+	Grid*    grid;
+	Field*   field;
+	CDG*     cdg;
+	double   vol;
+	double   ans    = 16.0/M_PI/M_PI;
 
 	/* test convergence of errors with increased resolution for given quadrature order */
 	cout << "testing quadrature, order: " << QUAD_ORDER << endl;
@@ -76,7 +76,7 @@ int main() {
 	nx = ny = 1;
 	cout << "testing basis function setup and integration" << endl;
 	for( i = 0; i < 8; i++ ) {
-		grid  = new Grid( nx, ny, -1.0, -1.0, +1.0, +1.0, 3, 2, true );
+		grid  = new Grid( nx, ny, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
 		field = new Field( grid );
 		cdg   = new CDG( field, NULL, NULL, NULL, NULL );
 
