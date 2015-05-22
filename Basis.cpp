@@ -16,13 +16,13 @@ Basis::Basis( Polygon* _poly, int _order, double* _origin, double _dx, double _d
 	origin[0] = _origin[0];
 	origin[1] = _origin[1];
 
-	if( order == 1 ) {
+	if( order == 0 ) {
 		nFuncs = 1;
 	}
-	else if( order == 2 ) {
+	else if( order == 1 ) {
 		nFuncs = 3;
 	}
-	else if( order == 3 ) {
+	else if( order == 2 ) {
 		nFuncs = 6;
 	}
 	else {
@@ -33,13 +33,13 @@ Basis::Basis( Polygon* _poly, int _order, double* _origin, double _dx, double _d
 	yPower = new int[nFuncs];
 
 	xPower[0] = yPower[0] = 0;
-	if( order == 2 ) {
+	if( order == 1 ) {
 		xPower[1] = 1;
 		xPower[2] = 0;
 		yPower[1] = 0;
 		yPower[2] = 1;
 	}
-	if( order == 3 ) {
+	if( order == 2 ) {
 		xPower[1] = 1;
 		xPower[2] = 0;
 		xPower[3] = 2;

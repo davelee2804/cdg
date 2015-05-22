@@ -21,8 +21,8 @@ using namespace std;
 #define NX 64
 #define NY 64
 
-#define QUAD_ORDER 3
-#define BASIS_ORDER 2
+#define QUAD_ORDER 2
+#define BASIS_ORDER 1
 
 double ux( double* p ) {
 	return -p[1];
@@ -109,13 +109,13 @@ void WriteVelocity( Grid* grid ) {
 }
 
 int main() {
-	Grid*     grid      = new Grid( NX, NY, -1.0, -1.0, +1.0, +1.0, QUAD_ORDER, BASIS_ORDER, true );
+	Grid*     grid      = new Grid( NX, NY, -2.0, -2.0, +2.0, +2.0, QUAD_ORDER, BASIS_ORDER, true );
 	Field*    phi       = new Field( grid );
 	CDG*      cdg;
 	int       i;
 	int       start     = 0;
-	int       nsteps    = 64*4;
-	int       dump      = 8;
+	int       nsteps    = 512;
+	int       dump      = 16;
 	double    dt        = 0.5*M_PI/nsteps;
 	Field*    ans       = new Field( grid );
 	Limiter*  lim       = new Limiter( phi );
