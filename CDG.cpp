@@ -182,24 +182,25 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		for( poly_i = 0; poly_i < 6; poly_i++ ) {
 			incPoly = grid->polys[pinds[poly_i]];
 			intPoly = Intersection( prePoly, incPoly );
+			if( intPoly == NULL ) {
+				continue;
+			}
 
-			if( intPoly ) {
-				for( tri_i = 0; tri_i < intPoly->n; tri_i++ ) {
-					tri = intPoly->tris[tri_i];
-					for( quad_i = 0; quad_i < tri->nq; quad_i++ ) {
-						TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
-						weight = tri->wi[quad_i]*tri->area;
-						tracer = phi->EvalAtCoord( tri->qi[quad_i] );
-						for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
-							basis_into = phi->basis[into]->EvalIJ( qf, basis_i );
-							basis_from = phi->basis[from]->EvalIJ( qf, basis_i );
-							flux[into][basis_i] += weight*tracer*basis_into;
-							flux[from][basis_i] -= weight*tracer*basis_from;
-						}
+			for( tri_i = 0; tri_i < intPoly->n; tri_i++ ) {
+				tri = intPoly->tris[tri_i];
+				for( quad_i = 0; quad_i < tri->nq; quad_i++ ) {
+					TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
+					weight = tri->wi[quad_i]*tri->area;
+					tracer = phi->EvalAtCoord( tri->qi[quad_i] );
+					for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
+						basis_into = phi->basis[into]->EvalIJ( qf, basis_i );
+						basis_from = phi->basis[from]->EvalIJ( qf, basis_i );
+						flux[into][basis_i] += weight*tracer*basis_into;
+						flux[from][basis_i] -= weight*tracer*basis_from;
 					}
 				}
-				delete intPoly;
 			}
+			delete intPoly;
 		}
 		delete prePoly;
 	}
