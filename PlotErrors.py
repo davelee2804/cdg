@@ -3,12 +3,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+#gaussian ic
 q2b1_l1=[0.0103294,0.00189244,0.000376767,0.000105207]
 q2b1_l2=[0.0222201,0.00436785,0.000758595,0.000199117]
 dx1 =[2.0/24,2.0/48,2.0/96,2.0/192]
 
-q4b2_l1=[0.000484247,4.96566e-05]
-q4b2_l2=[0.00146153,0.000143876]
+#gaussian ic
+#q4b2_l1=[0.000484247,4.96566e-05]
+#q4b2_l2=[0.00146153,0.000143876]
+
+#cosine ic
+q4b2_l1=[0.000233686,3.18764e-05]
+q4b2_l2=[0.00063811,9.91304e-05]
 dx2 =[2.0/24,2.0/48]
 
 lx = np.log(dx1)
@@ -40,7 +46,7 @@ plt.loglog( dx1, q2b1_l2, '-o', label='Q2B1: $L_2 error=$'+str(m2[0])[:6] )
 plt.loglog( dx2, q4b2_l1, '-o', label='Q4B2: $L_1 error=$'+str(m3[0])[:6] )
 plt.loglog( dx2, q4b2_l2, '-o', label='Q4B2: $L_2 error=$'+str(m4[0])[:6] )
 plt.legend( loc='upper left' )
-plt.title( 'Errors for the CDG scheme with linear basis quadratic quadrature' )
+plt.title( 'Error convergence for the CDG advection scheme' )
 plt.xlabel( '$\Delta x$' )
 plt.ylabel( 'Error' )
 plt.savefig( 'convergence_error.png' )

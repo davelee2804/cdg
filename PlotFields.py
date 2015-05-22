@@ -11,15 +11,23 @@ def analytic( x, y ):
 	yo = 0.5*np.sin( 0.75*np.pi )
 	r2 = (x - xo)*(x - xo) + (y - yo)*(y - yo)
 	if( np.sqrt( r2 ) ) < 0.4:
-		return exp( -40.0*r2 )
+		return 0.5*( 1.0 + np.cos( np.pi*np.sqrt(r2)/0.4 ) )
 	else:
 		return 0.0
 
-def basis_eval( x, y, p ):
-	return p[0] + p[1]*x + p[2]*y + p[3]*x*y
+def basis_eval_linear( x, y, p, nx ):
+	#dx = 4.0/nx
+	#return p[0] + p[1]*x/dx + p[2]*y/dx
+	return p[0] + p[1]*x + p[2]*y
+
+def basis_eval_quadratic( x, y, p, nx ):
+	#dx = 4.0/nx
+	#return p[0] + p[1]*x/dx + p[2]*y/dx + p[3]*x*x/dx/dx/2 + p[4]*x*y/dx/dx/2 + p[5]*y*y/dx/dx
+	return p[0] + p[1]*x + p[2]*y + p[3]*x*x + p[4]*x*y + p[5]*y*y
 
 tstep = int(sys.argv[1])
 tskip = int(sys.argv[2])
+nx    = int(sys.argv[3])
 
 XY = np.loadtxt( 'pgrid.txt' )
 p = XY[:,0]
@@ -35,7 +43,7 @@ for i in np.arange( 0, tstep, tskip ):
 	print 'time step: ', i
 	phi = np.loadtxt( 'phi_basis.' + '%.4u'%i + '.txt' )
 	for j in np.arange( len(x) ):
-		z[j] = basis_eval( x[j], y[j], phi[int(p[j])] )
+		z[j] = basis_eval_quadratic( x[j], y[j], phi[int(p[j])], nx )
 
 	plt.tricontourf( x, y, z, 100 )
 	plt.clim( 0.0, 1.0 )
@@ -48,7 +56,7 @@ for i in np.arange( len(x) ):
 
 phi = np.loadtxt( 'phi_basis.' + '%.4u'%tstep + '.txt' )
 for j in np.arange( len(x) ):
-	z[j] = basis_eval( x[j], y[j], phi[int(p[j])] )
+	z[j] = basis_eval_quadratic( x[j], y[j], phi[int(p[j])], nx )
 
 plt.tricontourf( x, y, z, 100 )
 plt.clim( 0.0, 1.0 )

@@ -204,23 +204,27 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		delete prePoly;
 	}
 
-	/* add rhs contributions from previous poly */
-	for( poly_i = 0; poly_i < grid->nPolys; poly_i++ ) {
-		for( tri_i = 0; tri_i < grid->polys[poly_i]->n; tri_i++ ) {
-			tri = grid->polys[poly_i]->tris[tri_i];
-			for( quad_i = 0; quad_i < tri->nq; quad_i++ ) {
-				TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
-				weight = tri->wi[quad_i]*tri->area;
-				tracer = phi->EvalAtCoord( tri->qi[quad_i] );
-				for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
-					basis_into = phi->basis[poly_i]->EvalIJ( qf, basis_i );
-					flux[poly_i][basis_i] += weight*tracer*basis_into;
+	#pragma omp parallel private( poly_i, tri_i, tri, quad_i, qf, weight, tracer, basis_into )
+	{
+		#pragma omp for
+		/* add rhs contributions from previous poly */
+		for( poly_i = 0; poly_i < grid->nPolys; poly_i++ ) {
+			for( tri_i = 0; tri_i < grid->polys[poly_i]->n; tri_i++ ) {
+				tri = grid->polys[poly_i]->tris[tri_i];
+				for( quad_i = 0; quad_i < tri->nq; quad_i++ ) {
+					TraceRK2( dt, ADV_FORWARD, tri->qi[quad_i], qf );
+					weight = tri->wi[quad_i]*tri->area;
+					tracer = phi->EvalAtCoord( tri->qi[quad_i] );
+					for( basis_i = 0; basis_i < nBasis; basis_i++ ) {
+						basis_into = phi->basis[poly_i]->EvalIJ( qf, basis_i );
+						flux[poly_i][basis_i] += weight*tracer*basis_into;
+					}
 				}
 			}
-		}
 
-		/* update the poly coefficients */
-		AXEB( betaInv_ij[poly_i], flux[poly_i], phiTemp->basis[poly_i]->ci, nBasis );
+			/* update the poly coefficients */
+			AXEB( betaInv_ij[poly_i], flux[poly_i], phiTemp->basis[poly_i]->ci, nBasis );
+		}
 	}
 
 	for( poly_i = 0; poly_i < grid->nPolys; poly_i++ ) {

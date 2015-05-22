@@ -105,6 +105,10 @@ double Field::L1Error( Func* analytic, bool doNorm ) {
 
 	for( i = 0; i < grid->nPolys; i++ ) {
 		poly = grid->polys[i];
+		if( poly->origin[0] < -0.5 || poly->origin[0] > +0.0 || poly->origin[1] < +0.0 || poly->origin[1] > +0.5 ) {
+			continue;
+		}
+
 		for( j = 0; j < poly->n; j++ ) {
 			tri = poly->tris[j];
 			for( k = 0; k < tri->nq; k++ ) {
@@ -133,6 +137,10 @@ double Field::L2Error( Func* analytic, bool doNorm ) {
 
 	for( i = 0; i < grid->nPolys; i++ ) {
 		poly = grid->polys[i];
+		if( poly->origin[0] < -0.5 || poly->origin[0] > +0.0 || poly->origin[1] < +0.0 || poly->origin[1] > +0.5 ) {
+			continue;
+		}
+
 		for( j = 0; j < poly->n; j++ ) {
 			tri = poly->tris[j];
 			for( k = 0; k < tri->nq; k++ ) {

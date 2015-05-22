@@ -18,11 +18,11 @@
 
 using namespace std;
 
-#define NX 64
-#define NY 64
+#define NX 48
+#define NY 48
 
-#define QUAD_ORDER 2
-#define BASIS_ORDER 1
+#define QUAD_ORDER 4
+#define BASIS_ORDER 2
 
 double ux( double* p ) {
 	return -p[1];
@@ -36,7 +36,7 @@ double p0( double* p ) {
 	double xo = 0.5*cos( 0.25*M_PI );
 	double yo = 0.5*sin( 0.25*M_PI );
 	double r2 = ( p[0] - xo )*( p[0] - xo ) + ( p[1] - yo )*( p[1] - yo );
-	if( sqrt( r2 ) < 0.40 ) return exp(-40.0*r2);
+	if( sqrt( r2 ) < 0.4 ) return 0.5*( 1.0 + cos( M_PI*sqrt(r2)/0.4 ) );
 	return 0.0;
 }
 
@@ -44,7 +44,7 @@ double p1( double* p ) {
 	double xo = 0.5*cos( 0.75*M_PI );
 	double yo = 0.5*sin( 0.75*M_PI );
 	double r2 = ( p[0] - xo )*( p[0] - xo ) + ( p[1] - yo )*( p[1] - yo );
-	if( sqrt( r2 ) < 0.40 ) return exp(-40.0*r2);
+	if( sqrt( r2 ) < 0.4 ) return 0.5*( 1.0 + cos( M_PI*sqrt(r2)/0.4 ) );
 	return 0.0;
 }
 
@@ -153,8 +153,6 @@ int main() {
 		grid->WriteTris( "pgrid" );
 		ans->WriteBasis( "ans", 0 );
 		phi->WriteBasis( "phi", 0 );
-		phi->WriteDeriv( "phi", 0, 0 );
-		phi->WriteDeriv( "phi", 0, 1 );
 		WriteVelocity( grid );
 	}
 	else {
@@ -172,8 +170,6 @@ int main() {
 		cout << "\t...done, volume: " << phi->Integrate() << endl;
 		if( i%dump == 0 ) {
 			phi->WriteBasis( "phi", i );
-			phi->WriteDeriv( "phi", i, 0 );
-			phi->WriteDeriv( "phi", i, 1 );
 		}
 	}
 

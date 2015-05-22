@@ -155,17 +155,21 @@ void CFA::CalcChars( Grid* preGrid, double dt ) {
 	int	nx = preGrid->nx;
 	int	ny = preGrid->ny;
 
-	/* calculate the grid pre-image */
-	for( i = 0; i < phi->grid->nVerts; i++ ) {
-		xi = i%(nx+1);
-		yj = i/(nx+1);
+	#pragma omp parallel private( i, xi, yj )
+	{
+		#pragma omp for
+		/* calculate the grid pre-image */
+		for( i = 0; i < phi->grid->nVerts; i++ ) {
+			xi = i%(nx+1);
+			yj = i/(nx+1);
 
-		/* ignore boundary verts for now */
-		if( xi == 0 || xi == nx || yj == 0 || yj == ny ) {
-			continue;
+			/* ignore boundary verts for now */
+			if( xi == 0 || xi == nx || yj == 0 || yj == ny ) {
+				continue;
+			}
+
+			TraceRK2( dt, ADV_BACKWARD, phi->grid->verts[i], preGrid->verts[i] );
 		}
-
-		TraceRK2( dt, ADV_BACKWARD, phi->grid->verts[i], preGrid->verts[i] );
 	}
 }
 
