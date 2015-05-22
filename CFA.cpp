@@ -20,25 +20,29 @@ using namespace std;
 #define ADV_FORWARD (+1)
 #define ADV_BACKWARD (-1)
 
+#define MAX_POLY_SIZE 12
+
 CFA::CFA( Field* _phi, Field* _velx, Field* _vely, Func* _fu, Func* _fv ) {
+	int i;
+
 	phi  = _phi;
 	velx = _velx;
 	vely = _vely;
 	fu   = _fu;
 	fv   = _fv;
 
-	pts = new double*[4];
-	pts[0] = new double[2];
-	pts[1] = new double[2];
-	pts[2] = new double[2];
-	pts[3] = new double[2];
+	pts = new double*[MAX_POLY_SIZE];
+	for( i = 0; i < MAX_POLY_SIZE; i++ ) {
+		pts[i] = new double[2];
+	}
 }
 
 CFA::~CFA() {
-	delete[] pts[0];
-	delete[] pts[1];
-	delete[] pts[2];
-	delete[] pts[3];
+	int i;
+
+	for( i = 0; i < MAX_POLY_SIZE; i++ ) {
+		delete[] pts[i];
+	}
 	delete[] pts;
 }
 
@@ -298,7 +302,6 @@ Polygon* CFA::Intersection( Polygon* poly1, Polygon* poly2 ) {
 	typedef std::vector<Point> Vec_Point;
 
 	Vec_Point p1(poly1->n), p2(poly2->n), intersect;
-	double** pts;
 	Polygon* poly;
 
 	for( i = 0; i < poly1->n; i++ ) {
@@ -317,20 +320,13 @@ Polygon* CFA::Intersection( Polygon* poly1, Polygon* poly2 ) {
 		return NULL;
 	}
 
-	pts = new double*[n];
 	/* add points in reverse order for consistency with clockwise polygon convection */
 	for( i = 0; i < n; i++ ) {
-		pts[i] = new double[2];
 		pts[i][0] = intersect[n-1-i].x;
 		pts[i][1] = intersect[n-1-i].y;
 	}
 
 	poly = new Polygon( pts, n, poly1->tris[0]->order );
-
-	for( i = 0; i < n; i++ ) {
-		delete[] pts[i];
-	}
-	delete[] pts;
 
 	return poly;
 }
