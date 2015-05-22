@@ -205,7 +205,7 @@ void CDG::CalcFluxes( Grid* preGrid, Field* phiTemp, double dt ) {
 		delete prePoly;
 	}
 
-	#pragma omp parallel private( poly_i, tri_i, tri, quad_i, qf, weight, tracer, basis_into )
+	#pragma omp parallel private( poly_i, tri_i, tri, quad_i, qf, weight, tracer, basis_i, basis_into )
 	{
 		#pragma omp for
 		/* add rhs contributions from previous poly */
