@@ -173,8 +173,10 @@ int main() {
 		}
 	}
 
-	cout << "L_1 error:  " << phi->L1Error( p1, false ) << endl;
-	cout << "L_2 error:  " << phi->L2Error( p1, false ) << endl;
+	cout << "L_1 error:         " << phi->L1Error( p1, false ) << endl;
+	cout << "L_2 error:         " << phi->L2Error( p1, false ) << endl;
+	cout << "L_1 error (norm):  " << phi->L1Error( p1, true ) << endl;
+	cout << "L_2 error (norm):  " << phi->L2Error( p1, true ) << endl;
 	cout << "mass loss:  " << 1.0 - phi->Integrate()/ans->Integrate() << endl;
 
 	delete lim;
