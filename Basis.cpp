@@ -25,6 +25,9 @@ Basis::Basis( Polygon* _poly, int _order, double* _origin, double _dx, double _d
 	else if( order == 2 ) {
 		nFuncs = 6;
 	}
+	else if( order == 3 ) {
+		nFuncs = 10;
+	}
 	else {
 		cout << "ERROR: basis order " << order << " not yet implemented..." << endl;
 		abort(); 
@@ -51,6 +54,27 @@ Basis::Basis( Polygon* _poly, int _order, double* _origin, double _dx, double _d
 		yPower[3] = 0;
 		yPower[4] = 1;
 		yPower[5] = 2;
+	}
+	if( order == 3 ) {
+		xPower[1] = 1;
+		xPower[2] = 0;
+		xPower[3] = 2;
+		xPower[4] = 1;
+		xPower[5] = 0;
+		xPower[6] = 3;
+		xPower[7] = 2;
+		xPower[8] = 1;
+		xPower[9] = 0;
+
+		yPower[1] = 0;
+		yPower[2] = 1;
+		yPower[3] = 0;
+		yPower[4] = 1;
+		yPower[5] = 2;
+		yPower[6] = 0;
+		yPower[7] = 1;
+		yPower[8] = 2;
+		yPower[9] = 3;
 	}
 
 	dxInv = 1.0/_dx;
