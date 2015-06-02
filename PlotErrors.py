@@ -33,6 +33,10 @@ q4b2_l2_0p5dt_rk4=[0.000641881,0.000114681,1.87076e-05,3.92934e-06]
 
 dx2 =[2.0/24,2.0/48,2.0/96,2.0/192]
 
+#mpas fct, rk4
+fct_2nd=[0.0101906306466,0.00367051499661,0.0011991676866]
+fct_dx =[2.0/24,2.0/48,2.0/96]
+
 lx = np.log(dx1)
 le = np.log(q2b1_l1)
 y=np.vstack([lx,np.ones(len(lx))]).T
@@ -69,14 +73,21 @@ y=np.vstack([lx,np.ones(len(lx))]).T
 m6=np.linalg.lstsq(y,le)[0]
 print m6
 
-plt.loglog( dx1, q2b1_l1, '-o', label='Q2B1: $L_1 error=$'+str(m1[0])[:5] )
+lx = np.log(fct_dx)
+le = np.log(fct_2nd)
+y=np.vstack([lx,np.ones(len(lx))]).T
+m7=np.linalg.lstsq(y,le)[0]
+print m7
+
+plt.loglog( dx1, q2b1_l1, '-o', label='CDG, linear basis: m='+str(m1[0])[:5] )
 #plt.loglog( dx1, q2b1_l2, '-o', label='Q2B1: $L_2 error=$'+str(m2[0])[:5] )
 #plt.loglog( dx1, q4b2_l1, '-o', label='Q4B2: $L_1 error=$'+str(m3[0])[:5] )
 #plt.loglog( dx1, q4b2_l2, '-o', label='Q4B2: $L_2 error=$'+str(m4[0])[:5] )
-plt.loglog( dx2, q4b2_l1_0p5dt_rk4, '-o', label='Q4B2: $L_1 error=$'+str(m5[0])[:5] )
+plt.loglog( dx2, q4b2_l1_0p5dt_rk4, '-o', label='CDG, quadratic basis: m='+str(m5[0])[:5] )
 #plt.loglog( dx2, q4b2_l2_0p5dt_rk4, '-o', label='Q4B2: $L_2 error (half dt)=$'+str(m6[0])[:5] )
+plt.loglog( fct_dx, fct_2nd, '-o', label='FCT, full correction: m='+str(m7[0])[:5] )
 plt.legend( loc='upper left' )
-plt.title( 'Error convergence for the CDG advection scheme' )
+plt.title( 'Error convergence for the CDG and FCT advection scheme' )
 plt.xlabel( '$\Delta x$' )
 plt.ylabel( 'Error' )
 plt.savefig( 'convergence_error.png' )
