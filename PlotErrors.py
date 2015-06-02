@@ -43,6 +43,11 @@ lx[2] = 2.36e+5 - 3.75e+3
 lx = lx/lx[0]
 fct_dx = fct_dx*lx
 
+#cosine ic, half dt rk4
+q1b0_l1=[0.0554997,0.0378029,0.0230043]
+q1b0_l2=[0.144966,0.0990748,0.0600695]
+dx3    =[2.0/24,2.0/48,2.0/96]
+
 lx = np.log(dx1)
 le = np.log(q2b1_l1)
 y=np.vstack([lx,np.ones(len(lx))]).T
@@ -85,6 +90,13 @@ y=np.vstack([lx,np.ones(len(lx))]).T
 m7=np.linalg.lstsq(y,le)[0]
 print m7
 
+lx = np.log(dx3)
+le = np.log(q1b0_l1)
+y=np.vstack([lx,np.ones(len(lx))]).T
+m8=np.linalg.lstsq(y,le)[0]
+print m8
+
+plt.loglog( dx3, q1b0_l1, '-o', label='CDG, constant basis: m='+str(m8[0])[:5] )
 plt.loglog( dx1, q2b1_l1, '-o', label='CDG, linear basis: m='+str(m1[0])[:5] )
 #plt.loglog( dx1, q2b1_l2, '-o', label='Q2B1: $L_2 error=$'+str(m2[0])[:5] )
 #plt.loglog( dx1, q4b2_l1, '-o', label='Q4B2: $L_1 error=$'+str(m3[0])[:5] )
@@ -92,8 +104,8 @@ plt.loglog( dx1, q2b1_l1, '-o', label='CDG, linear basis: m='+str(m1[0])[:5] )
 plt.loglog( dx2, q4b2_l1_0p5dt_rk4, '-o', label='CDG, quadratic basis: m='+str(m5[0])[:5] )
 #plt.loglog( dx2, q4b2_l2_0p5dt_rk4, '-o', label='Q4B2: $L_2 error (half dt)=$'+str(m6[0])[:5] )
 plt.loglog( fct_dx, fct_2nd, '-o', label='FCT, full correction: m='+str(m7[0])[:5] )
-plt.legend( loc='upper left' )
-plt.title( 'Error convergence for the CDG and FCT advection scheme' )
+plt.legend( loc='lower right' )
+plt.title( 'Error convergence for the CDG and FCT advection schemes' )
 plt.xlabel( '$\Delta x$' )
 plt.ylabel( 'Error' )
 plt.savefig( 'convergence_error.png' )
